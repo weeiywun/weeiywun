@@ -128,6 +128,9 @@ tr:hover td{background:var(--bg);}
 .vendor-tab:hover{color:var(--text);}
 .vendor-tab.active{color:var(--text);border-bottom-color:var(--accent);font-weight:500;}
 .vendor-tab .unpaid-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:5px;vertical-align:middle;}
+.vendor-cat-tab{padding:7px 18px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border2);border-bottom:none;background:var(--surface2);color:var(--text2);font-family:inherit;border-radius:7px 7px 0 0;transition:all .15s;}
+.vendor-cat-tab:hover{background:var(--surface);color:var(--text);}
+.vendor-cat-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
 .pay-chip{display:inline-flex;align-items:center;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid var(--border2);cursor:pointer;transition:all .12s;color:var(--text2);background:var(--surface);}
 .pay-chip:hover{border-color:var(--border2);background:var(--surface2);}
@@ -323,8 +326,15 @@ tr:hover td{background:var(--bg);}
 
   <!-- 廠商彙總 -->
   <div id="sec-vendors" class="section">
-    <!-- 廠商頁簽列 -->
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+    <!-- 分類頁簽 -->
+    <div style="display:flex;gap:4px;margin-bottom:0;" id="vendor-category-tabs">
+      <button class="vendor-cat-tab active" data-cat="中藥材" onclick="selectVendorCategory('中藥材')">中藥材</button>
+      <button class="vendor-cat-tab" data-cat="包裝材" onclick="selectVendorCategory('包裝材')">包裝材</button>
+      <button class="vendor-cat-tab" data-cat="物流" onclick="selectVendorCategory('物流')">物流</button>
+      <button class="vendor-cat-tab" data-cat="大樓修繕" onclick="selectVendorCategory('大樓修繕')">大樓修繕</button>
+    </div>
+    <!-- 搜尋與日期區間 -->
+    <div style="display:flex;gap:8px;align-items:center;margin-top:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
       <input type="text" id="vendor-search" placeholder="搜尋廠商…" oninput="renderVendorTabs()" style="width:150px;">
       <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
       <span style="font-size:12px;color:var(--text3);white-space:nowrap;">日期區間</span>
@@ -333,7 +343,7 @@ tr:hover td{background:var(--bg);}
       <input type="date" id="vendor-date-to" onchange="renderVendorContent()" style="width:140px;">
       <button class="btn btn-sm btn-ghost" onclick="clearVendorFilters()">✕ 清除</button>
     </div>
-    <!-- 頁簽 -->
+    <!-- 廠商頁簽 -->
     <div style="overflow-x:auto;margin-bottom:1rem;">
       <div id="vendor-tabs" style="display:flex;gap:0;border-bottom:1px solid var(--border);min-width:max-content;"></div>
     </div>
@@ -341,6 +351,8 @@ tr:hover td{background:var(--bg);}
     <div id="vendor-summary-bar" style="margin-bottom:1rem;"></div>
     <!-- 內容 -->
     <div id="vendor-content"></div>
+    <!-- 累計統計卡片 -->
+    <div id="vendor-total-card" style="margin-top:1.5rem;"></div>
   </div>
 
   <!-- 歷史價格查詢 -->
@@ -1245,6 +1257,24 @@ function printMonthly() {
   window.print();
 }
 
+// ── 廠商分類定義 ──────────────────────────────────────
+const VENDOR_CATEGORIES = {
+  '中藥材': ['利仁','廣生堂','和盛記','界順','明(坤贊)','三興','仁記','銓崧','中冬金元','鴻龍','港香蘭','源山','集昌','漢良堂','德合記','河記','駿賀','養蜂場'],
+  '包裝材': ['大新','豐甲','富田喬','原祥塑膠','捷可印','紙箱龍','南成','宏笙','尚景印刷'],
+  '物流':   ['新竹貨運','宅配通'],
+  '大樓修繕': ['新光保全','興承','崇友'],
+};
+let currentCategory = '中藥材';
+
+function selectVendorCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.vendor-cat-tab').forEach(el =>
+    el.classList.toggle('active', el.dataset.cat === cat)
+  );
+  currentVendor = null;
+  renderVendorTabs();
+}
+
 // ── 廠商彙總（頁簽版）────────────────────────────────
 let currentVendor = null;
 
@@ -1276,14 +1306,26 @@ function renderVendors() { renderVendorTabs(); }
 function renderVendorTabs() {
   const search = document.getElementById('vendor-search').value.toLowerCase();
   const map = getVendorMap();
-  let names = Object.keys(map)
-    .filter(v => !search || v.toLowerCase().includes(search))
-    .sort((a, b) => { const io = sortVendors([a,b]); return io[0]===a ? -1 : 1; });
+
+  // 只顯示當前分類的廠商
+  const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
+  let names = catVendors.filter(v =>
+    map[v] && (!search || v.toLowerCase().includes(search))
+  );
+  // 分類外但有資料且符合搜尋的廠商也顯示
+  if (search) {
+    const allCatVendors = new Set(Object.values(VENDOR_CATEGORIES).flat());
+    Object.keys(map).forEach(v => {
+      if (!allCatVendors.has(v) && v.toLowerCase().includes(search) && !names.includes(v))
+        names.push(v);
+    });
+  }
 
   if (!names.length) {
     document.getElementById('vendor-tabs').innerHTML = '';
     document.getElementById('vendor-summary-bar').innerHTML = '';
-    document.getElementById('vendor-content').innerHTML = '<div class="empty">沒有符合的廠商</div>';
+    document.getElementById('vendor-content').innerHTML = '<div class="empty">此分類沒有廠商資料</div>';
+    document.getElementById('vendor-total-card').innerHTML = '';
     return;
   }
 
@@ -1293,10 +1335,81 @@ function renderVendorTabs() {
 
   document.getElementById('vendor-tabs').innerHTML = names.map(v => {
     const safeV = v.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<button class="vendor-tab ${v === currentVendor ? 'active' : ''}" onclick="selectVendorTab('${safeV}')">${v}${map[v].unpaid > 0 ? '<span class="unpaid-dot" title="有待付款"></span>' : ''}</button>`;
+    const hasUnpaid = map[v] && map[v].unpaid > 0;
+    return `<button class="vendor-tab ${v===currentVendor?'active':''}" onclick="selectVendorTab('${safeV}')">${v}${hasUnpaid?'<span class="unpaid-dot"></span>':''}</button>`;
   }).join('');
 
   renderVendorContent();
+  renderVendorTotalCard();
+}
+
+function renderVendorTotalCard() {
+  const map = getVendorMap();
+  const dateFrom = document.getElementById('vendor-date-from').value;
+  const dateTo   = document.getElementById('vendor-date-to').value;
+  const hasRange = dateFrom || dateTo;
+  const rangeText = hasRange ? `${dateFrom||'最早'} ～ ${dateTo||'最新'}` : '統計至今（全部期間）';
+
+  // 計算當前分類的累計
+  const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
+  const catData = catVendors.filter(v => map[v]);
+
+  if (!catData.length) {
+    document.getElementById('vendor-total-card').innerHTML = '';
+    return;
+  }
+
+  const catTotal   = catData.reduce((s,v) => s + map[v].total, 0);
+  const catPaid    = catData.reduce((s,v) => s + map[v].paid, 0);
+  const catUnpaid  = catData.reduce((s,v) => s + map[v].unpaid, 0);
+  const catOrders  = catData.reduce((s,v) => s + map[v].orders.length, 0);
+
+  // 全部分類累計
+  const allVendors = Object.values(VENDOR_CATEGORIES).flat().filter(v => map[v]);
+  const grandTotal  = allVendors.reduce((s,v) => s + map[v].total, 0);
+  const grandUnpaid = allVendors.reduce((s,v) => s + map[v].unpaid, 0);
+
+  // 各分類小計
+  const catSummaries = Object.entries(VENDOR_CATEGORIES).map(([cat, vendors]) => {
+    const vlist = vendors.filter(v => map[v]);
+    if (!vlist.length) return null;
+    const t = vlist.reduce((s,v) => s+map[v].total, 0);
+    const u = vlist.reduce((s,v) => s+map[v].unpaid, 0);
+    return { cat, total: t, unpaid: u, count: vlist.length };
+  }).filter(Boolean);
+
+  document.getElementById('vendor-total-card').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">累計採購統計</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${rangeText}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--text3);">全部廠商總額</div>
+          <div style="font-size:24px;font-weight:600;letter-spacing:-.02em;">$${grandTotal.toLocaleString()}</div>
+          ${grandUnpaid > 0 ? `<div style="font-size:12px;color:var(--amber);">待付款 $${grandUnpaid.toLocaleString()}</div>` : '<div style="font-size:12px;color:var(--green);">全數付清</div>'}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
+        ${catSummaries.map((cs,i) => `
+          <div style="padding:1rem 1.25rem;${i>0?'border-left:1px solid var(--border)':''};">
+            <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px;">${cs.cat}</div>
+            <div style="font-size:16px;font-weight:600;">$${cs.total.toLocaleString()}</div>
+            ${cs.unpaid > 0
+              ? `<div style="font-size:11px;color:var(--amber);margin-top:2px;">待付 $${cs.unpaid.toLocaleString()}</div>`
+              : `<div style="font-size:11px;color:var(--green);margin-top:2px;">已付清</div>`}
+            <div style="font-size:11px;color:var(--text3);margin-top:1px;">${cs.count} 家廠商</div>
+          </div>`).join('')}
+      </div>
+      <div style="padding:.75rem 1.25rem;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:var(--text2);">當前分類「${currentCategory}」${catData.length} 家・${catOrders} 筆訂單</div>
+        <div style="font-size:13px;font-weight:500;">$${catTotal.toLocaleString()}
+          <span style="font-size:12px;color:var(--text3);margin-left:8px;">已付 $${catPaid.toLocaleString()}</span>
+          ${catUnpaid > 0 ? `<span style="font-size:12px;color:var(--amber);margin-left:6px;">待付 $${catUnpaid.toLocaleString()}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
 }
 
 function selectVendorTab(v) {
