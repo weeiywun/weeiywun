@@ -1345,52 +1345,17 @@ function renderVendorTabs() {
 
 function renderVendorTotalCard() {
   const map = getVendorMap();
-  const dateFrom = document.getElementById('vendor-date-from').value;
-  const dateTo   = document.getElementById('vendor-date-to').value;
-  const hasRange = dateFrom || dateTo;
-  const rangeText = hasRange ? `${dateFrom||'最早'} ～ ${dateTo||'最新'}` : '統計至今（全部期間）';
-
-  const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
-  const catData = catVendors.filter(v => map[v]);
-  if (!catData.length) { document.getElementById('vendor-total-card').innerHTML = ''; return; }
-
-  const catTotal  = catData.reduce((s,v) => s + map[v].total, 0);
-  const catOrders = catData.reduce((s,v) => s + map[v].orders.length, 0);
-
-  const rows = catData.map(v => {
-    const d = map[v];
-    return `<tr>
-      <td style="font-weight:500;">${v}</td>
-      <td style="text-align:right;color:var(--text2);">${d.orders.length} 筆</td>
-      <td style="text-align:right;font-weight:600;">$${d.total.toLocaleString()}</td>
-    </tr>`;
-  }).join('');
-
+  if (!currentVendor || !map[currentVendor]) {
+    document.getElementById('vendor-total-card').innerHTML = '';
+    return;
+  }
+  const d = map[currentVendor];
   document.getElementById('vendor-total-card').innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);">
-      <div style="padding:.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:500;">${currentCategory}　累計採購</div>
-        <div style="font-size:12px;color:var(--text3);">${rangeText}</div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr style="background:var(--bg);">
-            <th style="text-align:left;padding:8px 1.25rem;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);">廠商</th>
-            <th style="text-align:right;padding:8px 1rem;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);">訂單數</th>
-            <th style="text-align:right;padding:8px 1.25rem;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);">累計金額</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          <tr style="background:var(--surface2);font-weight:600;">
-            <td style="padding:.7rem 1.25rem;border-top:1px solid var(--border);">合計</td>
-            <td style="text-align:right;padding:.7rem 1rem;border-top:1px solid var(--border);color:var(--text2);">${catOrders} 筆</td>
-            <td style="text-align:right;padding:.7rem 1.25rem;border-top:1px solid var(--border);">$${catTotal.toLocaleString()}</td>
-          </tr>
-        </tfoot>
-      </table>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);">
+      <span style="font-size:13px;font-weight:600;color:var(--text);">${currentVendor}</span>
+      <span style="font-size:13px;color:var(--text2);">累計 <b>${d.orders.length}</b> 筆</span>
+      <span style="font-size:16px;font-weight:600;">$${d.total.toLocaleString()}</span>
     </div>`;
-}
 }
 
 function selectVendorTab(v) {
@@ -1400,6 +1365,7 @@ function selectVendorTab(v) {
     el.classList.toggle('active', label === v);
   });
   renderVendorContent();
+  renderVendorTotalCard();
 }
 
 function renderVendorContent() {
