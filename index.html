@@ -232,80 +232,17 @@ tr:hover td{background:var(--bg);}
 
   <!-- 新增訂單 -->
   <div id="sec-add" class="section">
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">訂單基本資訊</div>
-      <div class="form-grid">
-        <div class="form-group"><label>日期 *</label><input type="date" id="f-date"></div>
-        <div class="form-group"><label>訂單編號 *</label><input type="text" id="f-orderid" placeholder="例：No.054825"></div>
-        <div class="form-group"><label>廠商名稱 *</label><input type="text" id="f-vendor" list="vendor-list" placeholder="廠商名稱"><datalist id="vendor-list"></datalist></div>
-      </div>
-      <div style="margin-top:12px;">
-        <div class="form-group"><label>備註</label><input type="text" id="f-note" placeholder="選填"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:.75rem;">商品明細</div>
-      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">商品名稱</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">單價（元）</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">數量</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">單位</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">小計</span>
-        <span></span>
-      </div>
-      <div id="items-container"></div>
-      <button class="btn btn-sm" onclick="addItemRow()" style="margin-top:8px;">+ 新增品項</button>
-      <div class="order-footer">
-        <div></div>
-        <div style="text-align:right;">
-          <div style="font-size:12px;color:var(--text2);">訂單總金額</div>
-          <div class="order-total-amount" id="order-total">$0</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">付款與備註</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <!-- 左：付款資訊 -->
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-              <input type="checkbox" id="f-paid" onchange="togglePaidFields()" style="width:16px;height:16px;cursor:pointer;">
-              <span style="font-size:13px;font-weight:500;">此訂單已付款</span>
-            </label>
-          </div>
-          <div id="paid-fields" style="display:none;flex-direction:column;gap:10px;">
-            <div class="form-group">
-              <label>付款日期</label>
-              <input type="date" id="f-paid-date">
-            </div>
-            <div class="form-group">
-              <label>付款方式</label>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;" id="pay-method-group">
-                <label class="pay-chip" data-val="現金"><input type="radio" name="paymethod" value="現金" style="display:none;">現金</label>
-                <label class="pay-chip" data-val="支票"><input type="radio" name="paymethod" value="支票" style="display:none;">支票</label>
-                <label class="pay-chip" data-val="匯款"><input type="radio" name="paymethod" value="匯款" style="display:none;">匯款</label>
-                <label class="pay-chip" data-val="月結"><input type="radio" name="paymethod" value="月結" style="display:none;">月結</label>
-                <label class="pay-chip" data-val="信用卡"><input type="radio" name="paymethod" value="信用卡" style="display:none;">信用卡</label>
-                <label class="pay-chip" data-val="貨到付款"><input type="radio" name="paymethod" value="貨到付款" style="display:none;">貨到付款</label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>付款備註（選填）</label>
-              <input type="text" id="f-pay-note" placeholder="例：支票號碼、匯款帳號末4碼…">
-            </div>
-          </div>
-        </div>
-        <!-- 右：訂單備註 -->
-        <div class="form-group">
-          <label>訂單備註</label>
-          <textarea id="f-note" placeholder="例：退貨紀錄、特殊折扣、交貨說明…" style="height:120px;resize:vertical;line-height:1.6;"></textarea>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
-      <button class="btn" onclick="resetForm()">清除</button>
-      <button class="btn btn-primary" id="save-btn" onclick="saveOrder()">儲存訂單</button>
+
+    <!-- 訂單清單（可新增多張）-->
+    <div id="order-forms-container"></div>
+
+    <button class="btn btn-sm" onclick="addOrderForm()" style="margin-bottom:1rem;">
+      + 新增一張訂單
+    </button>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem;">
+      <button class="btn" onclick="resetAllForms()">清除全部</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveAllOrders()">儲存全部訂單</button>
     </div>
     <div id="save-msg" style="text-align:right;margin-top:8px;font-size:13px;color:var(--green);min-height:18px;"></div>
   </div>
@@ -671,7 +608,7 @@ function switchTab(t) {
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.getElementById('sec-' + t).classList.add('active');
   if (t === 'orders') { renderOrders(); renderSummary(); }
-  if (t === 'add') initForm();
+  if (t === 'add') { if(document.querySelectorAll('.order-form-card').length===0) addOrderForm(); }
   if (t === 'vendors') renderVendors();
   if (t === 'price') initPriceSearch();
 }
@@ -1008,85 +945,203 @@ function updateVendorList() {
   if (dl) dl.innerHTML = vendors.map(v => `<option value="${v}">`).join('');
 }
 
-function initForm() {
-  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
-  ['f-orderid','f-vendor','f-note','f-pay-note'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const paidCb = document.getElementById('f-paid');
-  if (paidCb) { paidCb.checked = false; }
-  document.getElementById('paid-fields').style.display = 'none';
-  document.getElementById('f-paid-date').value = new Date().toISOString().slice(0, 10);
-  document.querySelectorAll('.pay-chip').forEach(el => el.classList.remove('selected'));
-  document.querySelectorAll('input[name=paymethod]').forEach(el => el.checked = false);
-  document.getElementById('items-container').innerHTML = '';
-  document.getElementById('order-total').textContent = '$0';
-  document.getElementById('save-msg').textContent = '';
-  itemCount = 0; addItemRow(); updateVendorList();
+// ── 廠商分類選單（新增訂單用）────────────────────────────
+function buildVendorSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  // 已知廠商（依分類）
+  const known = VENDOR_CATEGORIES;
+  // 從訂單中找到不在分類裡的廠商
+  const allCatVendors = new Set(Object.values(known).flat());
+  const extraVendors = [...new Set(orders.map(o=>o.vendor))].filter(v=>!allCatVendors.has(v)).sort();
+
+  let html = '<option value="">選擇廠商…</option>';
+  for (const [cat, vendors] of Object.entries(known)) {
+    html += `<optgroup label="── ${cat} ──">`;
+    vendors.forEach(v => { html += `<option value="${v}">${v}</option>`; });
+    html += '</optgroup>';
+  }
+  if (extraVendors.length) {
+    html += '<optgroup label="── 其他 ──">';
+    extraVendors.forEach(v => { html += `<option value="${v}">${v}</option>`; });
+    html += '</optgroup>';
+  }
+  // 允許手動輸入新廠商
+  html += '<option value="__new__">＋ 新廠商（請手動填寫）</option>';
+  sel.innerHTML = html;
 }
 
-function togglePaidFields() {
-  const checked = document.getElementById('f-paid').checked;
-  document.getElementById('paid-fields').style.display = checked ? 'flex' : 'none';
-  if (checked && !document.getElementById('f-paid-date').value) {
-    document.getElementById('f-paid-date').value = new Date().toISOString().slice(0, 10);
+// ── 多張訂單表單管理 ─────────────────────────────────────
+let formCounter = 0;
+
+function createOrderFormHTML(fid) {
+  const today = new Date().toISOString().slice(0,10);
+  return `
+  <div class="card order-form-card" id="oform-${fid}" style="position:relative;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);">訂單 #${fid}</div>
+      <button onclick="removeOrderForm(${fid})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px;" title="移除此訂單">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>日期 *</label>
+        <input type="date" id="f-date-${fid}" value="${today}">
+      </div>
+      <div class="form-group">
+        <label>訂單編號</label>
+        <input type="text" id="f-orderid-${fid}" placeholder="例：No.054825">
+      </div>
+      <div class="form-group">
+        <label>廠商名稱 *</label>
+        <div style="display:flex;gap:6px;">
+          <select id="f-vendor-sel-${fid}" onchange="onVendorSelChange(${fid})" style="flex:1;">
+            <option value="">選擇廠商…</option>
+          </select>
+          <input type="text" id="f-vendor-txt-${fid}" placeholder="或輸入新廠商" style="flex:1;display:none;">
+        </div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:10px;">
+      <label>備註</label>
+      <input type="text" id="f-note-${fid}" placeholder="選填">
+    </div>
+
+    <!-- 商品明細 -->
+    <div style="margin-top:1rem;">
+      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">商品名稱</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單價（元）</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">數量</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單位</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">小計</span>
+        <span></span>
+      </div>
+      <div id="items-container-${fid}"></div>
+      <button class="btn btn-sm" onclick="addItemRowTo(${fid})" style="margin-top:8px;">+ 新增品項</button>
+      <div style="text-align:right;margin-top:.75rem;">
+        <div style="font-size:12px;color:var(--text2);">訂單總金額</div>
+        <div class="order-total-amount" id="order-total-${fid}">$0</div>
+      </div>
+    </div>
+
+    <!-- 付款 -->
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="f-paid-${fid}" onchange="togglePaidFieldsFor(${fid})" style="width:16px;height:16px;cursor:pointer;">
+          <span style="font-size:13px;font-weight:500;">此訂單已付款</span>
+        </label>
+        <div id="paid-fields-${fid}" style="display:none;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>付款日期</label>
+            <input type="date" id="f-paid-date-${fid}" value="${today}">
+          </div>
+          <div class="form-group">
+            <label>付款方式</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;">
+              ${['現金','支票','匯款','月結','信用卡','貨到付款'].map(m=>`
+              <label class="pay-chip" data-fid="${fid}"><input type="radio" name="paymethod-${fid}" value="${m}" style="display:none;">${m}</label>`).join('')}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>付款備註</label>
+            <input type="text" id="f-pay-note-${fid}" placeholder="選填">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>訂單備註</label>
+        <textarea id="f-order-note-${fid}" placeholder="退貨紀錄、折扣說明…" style="height:90px;resize:vertical;"></textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addOrderForm() {
+  formCounter++;
+  const fid = formCounter;
+  const container = document.getElementById('order-forms-container');
+  container.insertAdjacentHTML('beforeend', createOrderFormHTML(fid));
+  buildVendorSelect('f-vendor-sel-' + fid);
+  addItemRowTo(fid);
+}
+
+function removeOrderForm(fid) {
+  const el = document.getElementById('oform-' + fid);
+  if (el) el.remove();
+}
+
+function resetAllForms() {
+  document.getElementById('order-forms-container').innerHTML = '';
+  formCounter = 0;
+  addOrderForm();
+}
+
+function onVendorSelChange(fid) {
+  const sel = document.getElementById('f-vendor-sel-' + fid);
+  const txt = document.getElementById('f-vendor-txt-' + fid);
+  if (sel.value === '__new__') {
+    txt.style.display = 'block';
+    txt.focus();
+  } else {
+    txt.style.display = 'none';
   }
 }
 
-// 付款方式選片點擊
-document.addEventListener('click', e => {
-  const chip = e.target.closest('.pay-chip');
-  if (!chip) return;
-  document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
-  chip.classList.add('selected');
-  chip.querySelector('input').checked = true;
-});
+function getVendorForForm(fid) {
+  const sel = document.getElementById('f-vendor-sel-' + fid);
+  if (sel.value === '__new__') {
+    return document.getElementById('f-vendor-txt-' + fid).value.trim();
+  }
+  return sel.value;
+}
 
-function addItemRow() {
-  itemCount++;
-  const id = itemCount;
+function togglePaidFieldsFor(fid) {
+  const checked = document.getElementById('f-paid-' + fid).checked;
+  document.getElementById('paid-fields-' + fid).style.display = checked ? 'flex' : 'none';
+}
+
+let itemCounters = {};
+function addItemRowTo(fid) {
+  if (!itemCounters[fid]) itemCounters[fid] = 0;
+  itemCounters[fid]++;
+  const id = fid + '_' + itemCounters[fid];
   const div = document.createElement('div');
   div.className = 'item-row'; div.id = 'item-' + id;
   div.innerHTML = `
     <div>
-      <input type="text" placeholder="商品名稱" id="iname-${id}" oninput="calcTotal();showPriceHint(${id})" onblur="showPriceHint(${id})">
+      <input type="text" placeholder="商品名稱" id="iname-${id}" oninput="calcTotalFor(${fid});showPriceHintFor('${id}')" onblur="showPriceHintFor('${id}')">
       <div class="price-hint" id="phint-${id}"></div>
     </div>
-    <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotal()">
-    <input type="number" placeholder="1" id="iqty-${id}" min="0" step="0.01" value="1" oninput="calcTotal()">
+    <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotalFor(${fid})">
+    <input type="number" placeholder="1" id="iqty-${id}" min="0" step="0.01" value="1" oninput="calcTotalFor(${fid})">
     <select id="iunit-${id}">
-      <option value="斤">斤</option>
-      <option value="公斤">公斤</option>
-      <option value="兩">兩</option>
-      <option value="個">個</option>
-      <option value="包">包</option>
-      <option value="罐">罐</option>
-      <option value="盒">盒</option>
+      <option value="斤">斤</option><option value="公斤">公斤</option>
+      <option value="兩">兩</option><option value="個">個</option>
+      <option value="包">包</option><option value="罐">罐</option>
+      <option value="盒">盒</option><option value="式">式</option>
     </select>
     <input type="text" id="isub-${id}" readonly placeholder="—">
-    <button class="remove-btn" onclick="removeItem(${id})" style="margin-top:2px;">✕</button>`;
-  document.getElementById('items-container').appendChild(div);
+    <button class="remove-btn" onclick="document.getElementById('item-${id}').remove();calcTotalFor(${fid})">✕</button>`;
+  document.getElementById('items-container-' + fid).appendChild(div);
 }
 
-function showPriceHint(id) {
+function showPriceHintFor(id) {
   const nameEl = document.getElementById('iname-'+id);
   const hintEl = document.getElementById('phint-'+id);
   const priceEl = document.getElementById('iprice-'+id);
   if (!nameEl || !hintEl) return;
   const q = nameEl.value.trim().toLowerCase();
-  if (!q || q.length < 2) { hintEl.textContent = ''; hintEl.className = 'price-hint'; return; }
-  // 找最近一次同名品項
+  if (!q || q.length < 2) { hintEl.textContent = ''; return; }
   const hits = [];
   orders.forEach(o => {
     o.items.forEach(i => {
-      if (i.name.toLowerCase().includes(q) && i.price > 0) {
+      if (i.name.toLowerCase().includes(q) && i.price > 0)
         hits.push({ date: o.date, name: i.name, price: i.price, vendor: o.vendor });
-      }
     });
   });
   if (!hits.length) { hintEl.textContent = ''; return; }
-  hits.sort((a, b) => b.date.localeCompare(a.date));
+  hits.sort((a,b) => b.date.localeCompare(a.date));
   const last = hits[0];
   const curPrice = parseFloat(priceEl?.value) || 0;
   let cls = 'price-hint', arrow = '';
@@ -1099,60 +1154,122 @@ function showPriceHint(id) {
   hintEl.textContent = `上次：$${last.price.toLocaleString()}／${last.date}（${last.vendor}）${arrow}`;
 }
 
-function removeItem(id) { const el = document.getElementById('item-'+id); if(el) el.remove(); calcTotal(); }
-
-function calcTotal() {
+function calcTotalFor(fid) {
   let total = 0;
-  document.querySelectorAll('.item-row').forEach(row => {
+  const container = document.getElementById('items-container-' + fid);
+  if (!container) return;
+  container.querySelectorAll('.item-row').forEach(row => {
     const id = row.id.replace('item-','');
     const p = parseFloat(document.getElementById('iprice-'+id)?.value)||0;
     const q = parseFloat(document.getElementById('iqty-'+id)?.value)||0;
     const sub = p*q;
     const subEl = document.getElementById('isub-'+id);
-    if(subEl) subEl.value = sub>0?'$'+sub.toLocaleString():'';
+    if (subEl) subEl.value = sub > 0 ? '$'+sub.toLocaleString() : '';
     total += sub;
   });
-  document.getElementById('order-total').textContent = '$'+Math.round(total).toLocaleString();
+  const totalEl = document.getElementById('order-total-' + fid);
+  if (totalEl) totalEl.textContent = '$' + Math.round(total).toLocaleString();
 }
 
-async function saveOrder() {
-  const date = document.getElementById('f-date').value;
-  const orderId = document.getElementById('f-orderid').value.trim();
-  const vendor = document.getElementById('f-vendor').value.trim();
-  if (!date||!orderId||!vendor) { alert('請填寫日期、訂單編號、廠商名稱'); return; }
-  const items = [];
-  document.querySelectorAll('.item-row').forEach(row => {
-    const id = row.id.replace('item-','');
-    const name = document.getElementById('iname-'+id)?.value.trim();
-    const price = parseFloat(document.getElementById('iprice-'+id)?.value)||0;
-    const qty = parseFloat(document.getElementById('iqty-'+id)?.value)||0;
-    const unit = document.getElementById('iunit-'+id)?.value || '斤';
-    if(name) items.push({name,price,qty,unit});
-  });
-  if(!items.length) { alert('請至少新增一個商品品項'); return; }
-  const total = Math.round(items.reduce((s,i)=>s+i.price*i.qty,0));
-  const isPaid = document.getElementById('f-paid').checked;
-  const paidDate = isPaid ? (document.getElementById('f-paid-date').value || new Date().toISOString().slice(0,10)) : '';
-  const payMethod = document.querySelector('input[name=paymethod]:checked')?.value || '';
-  const payNote = document.getElementById('f-pay-note').value.trim();
-  const note = document.getElementById('f-note').value.trim();
-  const newOrder = {
-    id: Date.now().toString(), date, orderId, vendor, items, total,
-    status: isPaid ? 'paid' : 'pending',
-    paidDate,
-    payMethod,
-    payNote,
-    note
-  };
-  orders.push(newOrder);
-  await persist(newOrder, 'insert');
-  toast('✓ 訂單已儲存');
-  document.getElementById('save-msg').textContent = '✓ 訂單已儲存';
-  setTimeout(()=>document.getElementById('save-msg').textContent='',3000);
-  initForm();
+// 付款方式點擊（多表單版）
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.pay-chip');
+  if (!chip) return;
+  const fid = chip.dataset.fid;
+  if (fid) {
+    document.querySelectorAll(`.pay-chip[data-fid="${fid}"]`).forEach(c => c.classList.remove('selected'));
+  } else {
+    document.querySelectorAll('.pay-chip:not([data-fid])').forEach(c => c.classList.remove('selected'));
+  }
+  chip.classList.add('selected');
+  chip.querySelector('input').checked = true;
+});
+
+async function saveAllOrders() {
+  const forms = document.querySelectorAll('.order-form-card');
+  if (!forms.length) { alert('沒有訂單可儲存'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '儲存中…';
+
+  let savedCount = 0;
+  let errors = [];
+
+  for (const form of forms) {
+    const fid = form.id.replace('oform-','');
+    const date    = document.getElementById('f-date-' + fid)?.value;
+    const orderId = document.getElementById('f-orderid-' + fid)?.value.trim() || '';
+    const vendor  = getVendorForForm(fid);
+    const note    = document.getElementById('f-note-' + fid)?.value.trim() || '';
+    const orderNote = document.getElementById('f-order-note-' + fid)?.value.trim() || '';
+
+    if (!date || !vendor) {
+      errors.push(`訂單 #${fid}：請填寫日期與廠商`);
+      continue;
+    }
+
+    const items = [];
+    document.getElementById('items-container-' + fid)?.querySelectorAll('.item-row').forEach(row => {
+      const id = row.id.replace('item-','');
+      const name  = document.getElementById('iname-'+id)?.value.trim();
+      const price = parseFloat(document.getElementById('iprice-'+id)?.value)||0;
+      const qty   = parseFloat(document.getElementById('iqty-'+id)?.value)||0;
+      const unit  = document.getElementById('iunit-'+id)?.value || '斤';
+      if (name) items.push({name, price, qty, unit});
+    });
+
+    if (!items.length) {
+      errors.push(`訂單 #${fid}（${vendor}）：請至少填一個品項`);
+      continue;
+    }
+
+    const total    = Math.round(items.reduce((s,i) => s+i.price*i.qty, 0));
+    const isPaid   = document.getElementById('f-paid-' + fid)?.checked;
+    const paidDate = isPaid ? (document.getElementById('f-paid-date-' + fid)?.value || date) : '';
+    const payMethod = document.querySelector(`input[name="paymethod-${fid}"]:checked`)?.value || '';
+    const payNote  = document.getElementById('f-pay-note-' + fid)?.value.trim() || '';
+
+    const newOrder = {
+      id: (Date.now() + savedCount).toString(),
+      date, orderId, vendor, items, total,
+      status: isPaid ? 'paid' : 'pending',
+      paidDate, payMethod, payNote,
+      note: orderNote || note
+    };
+
+    try {
+      orders.push(newOrder);
+      await persist(newOrder, 'insert');
+      savedCount++;
+    } catch(e) {
+      errors.push(`訂單 #${fid}（${vendor}）儲存失敗`);
+    }
+  }
+
+  btn.disabled = false; btn.textContent = '儲存全部訂單';
+
+  if (errors.length) {
+    alert('部分失敗：\n' + errors.join('\n'));
+  }
+  if (savedCount > 0) {
+    toast(`✓ 已儲存 ${savedCount} 張訂單`);
+    document.getElementById('save-msg').textContent = `✓ 已儲存 ${savedCount} 張訂單`;
+    setTimeout(() => document.getElementById('save-msg').textContent = '', 4000);
+    renderOrders(); renderSummary();
+    resetAllForms();
+  }
 }
 
-function resetForm() { initForm(); }
+// 相容舊呼叫（保留）
+function initForm() { resetAllForms(); }
+function resetForm() { resetAllForms(); }
+function addItemRow() { if(formCounter>0) addItemRowTo(formCounter); }
+function calcTotal() { if(formCounter>0) calcTotalFor(formCounter); }
+function updateVendorList() {}
+async function saveOrder() { await saveAllOrders(); }
+function togglePaidFields() { if(formCounter>0) togglePaidFieldsFor(formCounter); }
+function showPriceHint(id) { showPriceHintFor(id); }
+
 
 // ── 月底結算 ──────────────────────────────────────────
 function renderMonthly() {
