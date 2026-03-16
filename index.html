@@ -156,14 +156,17 @@ tr:hover td{background:var(--bg);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .print-title{display:none;}
 @media print{
-  .header,.nav,.filter-row,.btn,.no-print,.print-title~.filter-row{display:none!important;}
+  .header,.nav,.filter-row,.btn,.no-print{display:none!important;}
   .section{display:block!important;}
   #sec-orders,#sec-add,#sec-vendors,#sec-price{display:none!important;}
   #sec-monthly{display:block!important;}
-  body{background:#fff;}
-  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;}
-  .main{padding:0;}
-  .print-title{display:block!important;font-size:18px;font-weight:600;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid #000;}
+  body{background:#fff;margin:0;}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;margin-bottom:.5rem;}
+  .main{padding:0 1rem;}
+  .print-title{display:block!important;font-size:18px;font-weight:600;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:2px solid #000;}
+  #monthly-summary{margin-bottom:.5rem;}
+  #print-summary-page{display:block!important;}
+  #print-summary-page + *{page-break-before:always;}
 }
 </style>
 </head>
@@ -250,6 +253,8 @@ tr:hover td{background:var(--bg);}
   <!-- 月底結算 -->
   <div id="sec-monthly" class="section">
     <div class="print-title" id="print-title"></div>
+    <!-- 列印第一頁：未付款快速總覽（僅列印時顯示）-->
+    <div id="print-summary-page" style="display:none;"></div>
     <div class="card">
       <div class="filter-row no-print" style="margin-bottom:1.25rem;">
         <div class="form-group" style="flex:0 0 auto;"><label style="font-size:12px;font-weight:500;color:var(--text2);">選擇月份</label><input type="month" id="monthly-month" style="width:170px;"></div>
@@ -1367,11 +1372,93 @@ function renderMonthly() {
 }
 
 function printMonthly() {
-  if(!document.getElementById('monthly-table').innerHTML.trim()){alert('請先選擇月份並按查詢');return;}
+  if (!document.getElementById('monthly-table').innerHTML.trim()) { alert('請先選擇月份並按查詢'); return; }
   const ym = document.getElementById('monthly-month').value;
-  const [y,m] = ym.split('-');
+  const [y, m] = ym.split('-');
   document.getElementById('print-title').textContent = `惟元門市 ${y} 年 ${parseInt(m)} 月 進貨報表`;
+
+  // 建立第一頁：未付款快速總覽
+  const list = orders.filter(o => o.date.startsWith(ym));
+  const total  = list.reduce((s,o) => s+o.total, 0);
+  const paid   = list.filter(o=>o.status==='paid').reduce((s,o) => s+o.total, 0);
+  const unpaid = total - paid;
+
+  // 依廠商分組，只列出未付款的
+  const vendorMap = {};
+  list.forEach(o => {
+    if (!vendorMap[o.vendor]) vendorMap[o.vendor] = { orders:[], unpaid:0 };
+    vendorMap[o.vendor].orders.push(o);
+    if (o.status !== 'paid') vendorMap[o.vendor].unpaid += o.total;
+  });
+
+  // 依 VENDOR_ORDER + 分類排序，只顯示有未付款的
+  const allCatVendors = Object.values(VENDOR_CATEGORIES).flat();
+  const unpaidVendors = sortVendors(
+    Object.keys(vendorMap).filter(v => vendorMap[v].unpaid > 0)
+  );
+
+  // 依分類分組
+  const catGroups = {};
+  unpaidVendors.forEach(v => {
+    let cat = '其他';
+    for (const [c, vlist] of Object.entries(VENDOR_CATEGORIES)) {
+      if (vlist.includes(v)) { cat = c; break; }
+    }
+    if (!catGroups[cat]) catGroups[cat] = [];
+    catGroups[cat].push(v);
+  });
+
+  const unpaidOrderCount = list.filter(o=>o.status!=='paid').length;
+  const vendorUnpaidCount = unpaidVendors.length;
+
+  let summaryHTML = `
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:13px;font-weight:600;color:#666;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;">未付款快速總覽</div>
+      <div style="display:flex;gap:2rem;margin-bottom:1rem;padding:.75rem 1rem;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;">
+        <div><div style="font-size:11px;color:#888;">未付款廠商</div><div style="font-size:22px;font-weight:700;">${vendorUnpaidCount} 家</div></div>
+        <div><div style="font-size:11px;color:#888;">未付款訂單</div><div style="font-size:22px;font-weight:700;">${unpaidOrderCount} 筆</div></div>
+        <div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:#888;">未付款總額</div><div style="font-size:22px;font-weight:700;">$${unpaid.toLocaleString()}</div></div>
+      </div>`;
+
+  if (unpaidVendors.length === 0) {
+    summaryHTML += `<div style="padding:1.5rem;text-align:center;color:#4caf50;font-weight:600;font-size:15px;border:1px solid #c8e6c9;border-radius:6px;background:#f1f8e9;">✓ 本月所有廠商均已付清</div>`;
+  } else {
+    for (const [cat, vendors] of Object.entries(catGroups)) {
+      summaryHTML += `
+        <div style="margin-bottom:.75rem;">
+          <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.35rem;padding-bottom:.2rem;border-bottom:1px solid #eee;">${cat}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#f5f5f5;">
+                <th style="text-align:left;padding:5px 10px;border:1px solid #ddd;font-weight:600;">廠商</th>
+                <th style="text-align:center;padding:5px 10px;border:1px solid #ddd;font-weight:600;">未付款訂單數</th>
+                <th style="text-align:right;padding:5px 10px;border:1px solid #ddd;font-weight:600;">未付款總額</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${vendors.map(v => {
+                const vd = vendorMap[v];
+                const unpaidOrders = vd.orders.filter(o=>o.status!=='paid');
+                return `<tr>
+                  <td style="padding:5px 10px;border:1px solid #ddd;font-weight:500;">${v}</td>
+                  <td style="text-align:center;padding:5px 10px;border:1px solid #ddd;">${unpaidOrders.length} 筆</td>
+                  <td style="text-align:right;padding:5px 10px;border:1px solid #ddd;font-weight:600;">$${vd.unpaid.toLocaleString()}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+  }
+
+  summaryHTML += `</div>`;
+
+  document.getElementById('print-summary-page').innerHTML = summaryHTML;
   window.print();
+  // 列印完清除
+  setTimeout(() => {
+    document.getElementById('print-summary-page').innerHTML = '';
+  }, 2000);
 }
 
 // ── 廠商分類定義 ──────────────────────────────────────
