@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>惟元門市 — 進貨帳務管理系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#faf9f7;--surface:#fff;--surface2:#f4f3f0;--border:#e5e3de;--border2:#d0cec8;
+  --text:#1a1917;--text2:#6b6962;--text3:#9e9b94;--accent:#1a1917;
+  --green:#16a34a;--green-bg:#f0fdf4;--amber:#b45309;--amber-bg:#fffbeb;
+  --red:#dc2626;--red-bg:#fef2f2;--blue:#1d4ed8;--blue-bg:#eff6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.04);
+}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-badge{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em;}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:-2px;}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;}
+.nav-tab{padding:12px 16px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500;}
+.main{max-width:1200px;margin:0 auto;padding:1.5rem 2rem 3rem;}
+.section{display:none;}.section.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;box-shadow:var(--shadow);}
+.card+.card{margin-top:1rem;}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;box-shadow:var(--shadow);}
+.metric-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.metric-value{font-size:24px;font-weight:600;letter-spacing:-.02em;}
+.metric-value.warn{color:var(--amber);}.metric-value.ok{color:var(--green);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;transition:all .1s;white-space:nowrap;}
+.btn:hover{background:var(--surface2);}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500;}
+.btn-primary:hover{background:#333;border-color:#333;}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:6px;}
+.btn-success{color:var(--green);border-color:#bbf7d0;background:var(--green-bg);}
+.btn-success:hover{background:#dcfce7;}
+.btn-danger{color:var(--red);border-color:#fecaca;background:var(--red-bg);}
+.btn-danger:hover{background:#fee2e2;}
+.btn-ghost{border-color:transparent;background:transparent;}
+.btn-ghost:hover{background:var(--surface2);}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-size:12px;font-weight:500;color:var(--text2);}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;transition:border-color .1s;}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,25,23,.06);}
+input[readonly]{background:var(--surface2);color:var(--text2);cursor:default;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:var(--bg);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.order-row{cursor:pointer;}
+.order-row:hover td{background:#f0ede8 !important;}
+.total-row td{font-weight:600;background:var(--surface2)!important;}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:500;}
+.badge-pending{background:var(--amber-bg);color:var(--amber);}
+.badge-paid{background:var(--green-bg);color:var(--green);}
+.filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.filter-row input,.filter-row select{width:auto;}
+.items-header{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 32px;gap:8px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.items-header span{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+.item-row{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:7px;}
+.item-row input{padding:7px 9px;}
+.remove-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text3);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.remove-btn:hover{background:var(--red-bg);border-color:#fecaca;color:var(--red);}
+.order-footer{display:flex;justify-content:space-between;align-items:center;padding-top:1rem;margin-top:.5rem;border-top:1px solid var(--border);}
+.order-total-amount{font-size:26px;font-weight:600;letter-spacing:-.02em;}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px;}
+.sep{height:1px;background:var(--border);margin:1rem 0;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateY(0);}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--surface);border-radius:12px;padding:1.5rem;width:340px;box-shadow:var(--shadow-md);}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:1rem;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;}
+/* 訂單詳情 modal */
+.detail-modal{width:600px;max-width:96vw;max-height:90vh;overflow-y:auto;}
+.detail-modal h3{font-size:16px;font-weight:600;}
+.detail-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 1.5rem;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.detail-meta-item{display:flex;flex-direction:column;gap:2px;}
+.detail-meta-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+.detail-meta-value{font-size:13px;font-weight:500;}
+.detail-items-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1rem;}
+.detail-items-table th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;background:var(--bg);}
+.detail-items-table td{padding:9px 10px;border-bottom:1px solid var(--border);}
+.detail-items-table tr:last-child td{border-bottom:none;}
+.detail-total{display:flex;justify-content:flex-end;align-items:baseline;gap:8px;padding-top:.75rem;border-top:1px solid var(--border);}
+/* ... 選單 */
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;}
+.kebab-wrap{position:relative;}
+.kebab-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:none;cursor:pointer;font-size:18px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:background .1s;letter-spacing:1px;}
+.kebab-btn:hover{background:var(--surface2);}
+.kebab-menu{position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow-md);min-width:150px;z-index:300;overflow:hidden;display:none;}
+.kebab-menu.open{display:block;}
+.kebab-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;cursor:pointer;transition:background .1s;border:none;background:none;width:100%;text-align:left;font-family:inherit;color:var(--text);}
+.kebab-item:hover{background:var(--surface2);}
+.kebab-item.danger{color:var(--red);}
+.kebab-sep{height:1px;background:var(--border);margin:4px 0;}
+/* 退換貨標記 */
+.refund-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:500;background:#fdf2f8;color:#9d174d;border:1px solid #fbcfe8;}
+/* 編輯模式 */
+.edit-item-row{display:grid;grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 28px;gap:6px;align-items:center;margin-bottom:7px;}
+.edit-item-row input,.edit-item-row select{padding:6px 8px;font-size:13px;}
+/* 品項列 with 單位 */
+.item-row{display:grid;grid-template-columns:2.2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:7px;align-items:start;margin-bottom:10px;}
+.item-row input,.item-row select{padding:7px 9px;}
+.price-hint{font-size:11px;color:var(--text3);margin-top:3px;min-height:15px;line-height:1.3;}
+.price-hint.up{color:var(--red);}
+.price-hint.down{color:var(--green);}
+.price-hint.same{color:var(--amber);}
+/* 付款方式選項 */
+.pay-chip{display:inline-flex;align-items:center;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid var(--border2);cursor:pointer;transition:all .12s;color:var(--text2);background:var(--surface);}
+.pay-chip:hover{border-color:var(--border2);background:var(--surface2);}
+.pay-chip.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* 價格查詢 */
+.price-result{background:var(--surface2);border-radius:8px;padding:1rem;margin-top:1rem;}
+.price-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.price-row:last-child{border-bottom:none;}
+.price-item{font-weight:500;}
+.price-meta{color:var(--text3);font-size:12px;}
+.vendor-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1rem;}
+.vendor-header{padding:1.25rem;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);}
+.vendor-name{font-size:16px;font-weight:600;}
+.vendor-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+.vendor-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.vendor-stat{background:var(--surface);padding:12px 1.25rem;}
+.vendor-stat-label{font-size:11px;color:var(--text3);margin-bottom:2px;}
+.vendor-stat-value{font-size:16px;font-weight:600;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block;}
+.sync-dot.synced{background:var(--green);}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.print-title{display:none;}
+@media print{
+  .header,.nav,.filter-row,.btn,.no-print,.print-title~.filter-row{display:none!important;}
+  .section{display:block!important;}
+  #sec-orders,#sec-add,#sec-vendors,#sec-price{display:none!important;}
+  #sec-monthly{display:block!important;}
+  body{background:#fff;}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;}
+  .main{padding:0;}
+  .print-title{display:block!important;font-size:18px;font-weight:600;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid #000;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">惟</div>
+      <div>
+        <div class="logo-text">惟元門市 進貨管理</div>
+        <div class="logo-sub">採購帳務系統 v4.0 ☁</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;" class="no-print">
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-text">連線中…</span>
+      </div>
+      <button class="btn btn-sm" onclick="exportCSV()">↓ 匯出 CSV</button>
+      <button class="btn btn-sm" onclick="backupData()">↓ 備份資料</button>
+      <button class="btn btn-sm btn-primary" onclick="switchTab('add')">+ 新增訂單</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav no-print">
+  <div class="nav-inner">
+    <button class="nav-tab active" data-tab="orders" onclick="switchTab('orders')">訂單管理</button>
+    <button class="nav-tab" data-tab="add" onclick="switchTab('add')">新增訂單</button>
+    <button class="nav-tab" data-tab="monthly" onclick="switchTab('monthly')">月底結算</button>
+    <button class="nav-tab" data-tab="vendors" onclick="switchTab('vendors')">廠商彙總</button>
+    <button class="nav-tab" data-tab="price" onclick="switchTab('price')">歷史價格查詢</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 訂單管理 -->
+  <div id="sec-orders" class="section active">
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);" id="summary-cards"></div>
+    <div class="card">
+      <div class="filter-row">
+        <input type="month" id="filter-month" onchange="renderOrders()" style="width:150px;">
+        <input type="text" id="filter-vendor" placeholder="搜尋廠商…" oninput="renderOrders()" style="width:130px;">
+        <input type="text" id="filter-orderid" placeholder="訂單編號…" oninput="renderOrders()" style="width:130px;">
+        <input type="text" id="filter-item" placeholder="搜尋商品…" oninput="renderOrders()" style="width:130px;">
+        <select id="filter-status" onchange="renderOrders()" style="width:120px;">
+          <option value="">全部狀態</option>
+          <option value="pending">未付款</option>
+          <option value="paid">已付款</option>
+        </select>
+        <button class="btn btn-sm btn-ghost" onclick="clearFilters()">✕ 清除</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>日期</th><th>訂單編號</th><th>廠商</th><th>品項（點擊展開）</th><th>訂單金額</th><th>狀態</th><th>付款日期</th>
+          </tr></thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增訂單 -->
+  <div id="sec-add" class="section">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">訂單基本資訊</div>
+      <div class="form-grid">
+        <div class="form-group"><label>日期 *</label><input type="date" id="f-date"></div>
+        <div class="form-group"><label>訂單編號 *</label><input type="text" id="f-orderid" placeholder="例：No.054825"></div>
+        <div class="form-group"><label>廠商名稱 *</label><input type="text" id="f-vendor" list="vendor-list" placeholder="廠商名稱"><datalist id="vendor-list"></datalist></div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="form-group"><label>備註</label><input type="text" id="f-note" placeholder="選填"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:.75rem;">商品明細</div>
+      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">商品名稱</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">單價（元）</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">數量</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">單位</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">小計</span>
+        <span></span>
+      </div>
+      <div id="items-container"></div>
+      <button class="btn btn-sm" onclick="addItemRow()" style="margin-top:8px;">+ 新增品項</button>
+      <div class="order-footer">
+        <div></div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:var(--text2);">訂單總金額</div>
+          <div class="order-total-amount" id="order-total">$0</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">付款與備註</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <!-- 左：付款資訊 -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+              <input type="checkbox" id="f-paid" onchange="togglePaidFields()" style="width:16px;height:16px;cursor:pointer;">
+              <span style="font-size:13px;font-weight:500;">此訂單已付款</span>
+            </label>
+          </div>
+          <div id="paid-fields" style="display:none;flex-direction:column;gap:10px;">
+            <div class="form-group">
+              <label>付款日期</label>
+              <input type="date" id="f-paid-date">
+            </div>
+            <div class="form-group">
+              <label>付款方式</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;" id="pay-method-group">
+                <label class="pay-chip" data-val="現金"><input type="radio" name="paymethod" value="現金" style="display:none;">現金</label>
+                <label class="pay-chip" data-val="支票"><input type="radio" name="paymethod" value="支票" style="display:none;">支票</label>
+                <label class="pay-chip" data-val="匯款"><input type="radio" name="paymethod" value="匯款" style="display:none;">匯款</label>
+                <label class="pay-chip" data-val="月結"><input type="radio" name="paymethod" value="月結" style="display:none;">月結</label>
+                <label class="pay-chip" data-val="信用卡"><input type="radio" name="paymethod" value="信用卡" style="display:none;">信用卡</label>
+                <label class="pay-chip" data-val="貨到付款"><input type="radio" name="paymethod" value="貨到付款" style="display:none;">貨到付款</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>付款備註（選填）</label>
+              <input type="text" id="f-pay-note" placeholder="例：支票號碼、匯款帳號末4碼…">
+            </div>
+          </div>
+        </div>
+        <!-- 右：訂單備註 -->
+        <div class="form-group">
+          <label>訂單備註</label>
+          <textarea id="f-note" placeholder="例：退貨紀錄、特殊折扣、交貨說明…" style="height:120px;resize:vertical;line-height:1.6;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn" onclick="resetForm()">清除</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveOrder()">儲存訂單</button>
+    </div>
+    <div id="save-msg" style="text-align:right;margin-top:8px;font-size:13px;color:var(--green);min-height:18px;"></div>
+  </div>
+
+  <!-- 月底結算 -->
+  <div id="sec-monthly" class="section">
+    <div class="print-title" id="print-title"></div>
+    <div class="card">
+      <div class="filter-row no-print" style="margin-bottom:1.25rem;">
+        <div class="form-group" style="flex:0 0 auto;"><label style="font-size:12px;font-weight:500;color:var(--text2);">選擇月份</label><input type="month" id="monthly-month" style="width:170px;"></div>
+        <button class="btn btn-primary" onclick="renderMonthly()" style="margin-top:16px;">查詢</button>
+        <button class="btn btn-sm" onclick="printMonthly()" style="margin-top:16px;margin-left:auto;">⎙ 列印本月報表</button>
+      </div>
+      <div id="monthly-summary"></div>
+      <div id="monthly-table" style="overflow-x:auto;margin-top:1rem;"></div>
+    </div>
+  </div>
+
+  <!-- 廠商彙總 -->
+  <div id="sec-vendors" class="section">
+    <div class="filter-row" style="margin-bottom:1rem;align-items:center;">
+      <input type="text" id="vendor-search" placeholder="搜尋廠商…" oninput="renderVendors()" style="width:160px;">
+      <div style="width:1px;height:20px;background:var(--border);margin:0 4px;"></div>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;">日期區間</span>
+      <input type="date" id="vendor-date-from" onchange="renderVendors()" style="width:145px;">
+      <span style="font-size:13px;color:var(--text3);">—</span>
+      <input type="date" id="vendor-date-to" onchange="renderVendors()" style="width:145px;">
+      <button class="btn btn-sm btn-ghost" onclick="clearVendorFilters()">✕ 清除</button>
+      <span id="vendor-range-label" style="font-size:12px;color:var(--text3);"></span>
+    </div>
+    <div id="vendor-summary-bar" style="margin-bottom:1rem;"></div>
+    <div id="vendor-cards"></div>
+  </div>
+
+  <!-- 歷史價格查詢 -->
+  <div id="sec-price" class="section">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">查詢歷史採購價格</div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <input type="text" id="price-search" placeholder="輸入商品名稱（如：北耆王、天麻、枸杞…）" style="flex:1;" oninput="renderPriceSearch()">
+        <select id="price-vendor" onchange="renderPriceSearch()" style="width:160px;">
+          <option value="">所有廠商</option>
+        </select>
+      </div>
+      <div id="price-results"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modal-bg" style="display:none;">
+  <div class="modal">
+    <h3>標記付款日期</h3>
+    <div class="form-group"><label>付款日期</label><input type="date" id="modal-date"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmPaid()">確認付款</button>
+    </div>
+  </div>
+</div>
+
+<!-- 訂單詳情 Modal -->
+<div class="modal-bg" id="detail-modal-bg" style="display:none;" onclick="if(event.target===this)closeDetail()">
+  <div class="modal detail-modal">
+    <div id="detail-content"></div>
+    <div class="modal-actions" id="detail-actions"></div>
+  </div>
+</div>
+
+<script>
+// ── 歷史資料 ──────────────────────────────────────────
+const HISTORY = [{"id":"47","date":"2024-01-12","orderId":"No.014677","vendor":"界順","items":[{"name":"2A杞王","qty":1.0,"price":160.0,"unit":"斤"},{"name":"6A杞王","qty":110.0,"price":210.0,"unit":"斤"}],"total":23260,"status":"paid","paidDate":"2024-01-12","payMethod":"","payNote":"","note":"3件"},{"id":"48","date":"2024-01-12","orderId":"No.015082","vendor":"界順","items":[{"name":"2A杞王","qty":80.0,"price":160.0,"unit":"斤"},{"name":"盒封模卷茯苓","qty":30.0,"price":170.0,"unit":"斤"}],"total":17900,"status":"paid","paidDate":"2024-01-12","payMethod":"","payNote":"","note":"2件"},{"id":"109","date":"2024-12-02","orderId":"No.048915","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":52.0,"price":350.0,"unit":"斤"}],"total":18200,"status":"paid","paidDate":"2024-12-02","payMethod":"","payNote":"","note":""},{"id":"58","date":"2024-12-09","orderId":"No.008172","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":30.0,"price":230.0,"unit":"斤"}],"total":6900,"status":"paid","paidDate":"2024-12-09","payMethod":"","payNote":"","note":""},{"id":"77","date":"2024-12-10","orderId":"11312100056","vendor":"三興","items":[{"name":"鐵棍淮山片","qty":5.0,"price":330.0,"unit":"斤"},{"name":"野生大丁甘草片","qty":10.0,"price":330.0,"unit":"斤"},{"name":"福建澤瀉片(鹽製)","qty":2.0,"price":230.0,"unit":"斤"},{"name":"熟地黃片","qty":5.0,"price":290.0,"unit":"斤"},{"name":"炒斜白芍片","qty":2.0,"price":390.0,"unit":"斤"},{"name":"新山楂片","qty":10.0,"price":75.0,"unit":"斤"},{"name":"生川酸棗仁","qty":1.0,"price":2200.0,"unit":"斤"},{"name":"散貢羅漢果","qty":30.0,"price":13.0,"unit":"斤"},{"name":"生地片","qty":-2.0,"price":270.0,"unit":"斤"}],"total":540,"status":"paid","paidDate":"2024-12-10","payMethod":"","payNote":"","note":"一等"},{"id":"123","date":"2024-12-12","orderId":"L98066","vendor":"銓崧","items":[{"name":"杜仲片 3mm","qty":3.0,"price":290.0,"unit":"斤"},{"name":"杜仲片 2mm","qty":8.0,"price":225.0,"unit":"斤"},{"name":"玉竹片(津)壹級","qty":2.0,"price":485.0,"unit":"斤"},{"name":"丹參片(川)特級","qty":2.0,"price":345.0,"unit":"斤"},{"name":"天麻片(湖北)A","qty":5.0,"price":980.0,"unit":"斤"},{"name":"甘草片(梁)蜜炙片","qty":2.0,"price":335.0,"unit":"斤"},{"name":"續斷片(酒製)壹級","qty":1.0,"price":305.0,"unit":"斤"},{"name":"山茱萸(酒蒸)扁","qty":1.0,"price":400.0,"unit":"斤"},{"name":"川牛膝片(酒製)","qty":1.0,"price":310.0,"unit":"斤"},{"name":"木瓜片(A級)","qty":1.0,"price":250.0,"unit":"斤"}],"total":11165,"status":"paid","paidDate":"2024-12-12","payMethod":"","payNote":"","note":""},{"id":"141","date":"2024-12-16","orderId":"SA3C160046","vendor":"港香蘭","items":[{"name":"牛樟芝膠囊","qty":3.0,"price":1188.0,"unit":"斤"}],"total":3564,"status":"paid","paidDate":"2024-12-16","payMethod":"","payNote":"","note":"成本1980x6折"},{"id":"59","date":"2024-12-17","orderId":"No.008226","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":35.0,"price":230.0,"unit":"斤"}],"total":8050,"status":"paid","paidDate":"2024-12-17","payMethod":"","payNote":"","note":""},{"id":"33","date":"2024-12-19","orderId":"No.127177","vendor":"和盛記","items":[{"name":"特級若羌棗","qty":83.33,"price":155.0,"unit":"斤"},{"name":"圓棗王","qty":50.0,"price":145.0,"unit":"斤"}],"total":20167,"status":"paid","paidDate":"2024-12-19","payMethod":"","payNote":"","note":"香妃棗"},{"id":"78","date":"2024-12-24","orderId":"11312240008","vendor":"三興","items":[{"name":"散貢羅漢果","qty":20.0,"price":13.0,"unit":"斤"},{"name":"北沙參片","qty":2.0,"price":420.0,"unit":"斤"},{"name":"四製陳皮","qty":2.0,"price":270.0,"unit":"斤"},{"name":"鐵棍淮山片","qty":5.0,"price":330.0,"unit":"斤"},{"name":"炒斜白芍片","qty":3.0,"price":390.0,"unit":"斤"},{"name":"熟地黃片","qty":3.0,"price":290.0,"unit":"斤"}],"total":5330,"status":"paid","paidDate":"2024-12-24","payMethod":"","payNote":"","note":"一等"},{"id":"110","date":"2024-12-26","orderId":"No.049184","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":40.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":2.0,"price":110.0,"unit":"斤"}],"total":13200,"status":"paid","paidDate":"2024-12-26","payMethod":"","payNote":"","note":""},{"id":"142","date":"2024-12-30","orderId":"SA3C300145","vendor":"港香蘭","items":[{"name":"加味養肝丸","qty":1.0,"price":1000.0,"unit":"斤"}],"total":1000,"status":"paid","paidDate":"2024-12-30","payMethod":"","payNote":"","note":""},{"id":"143","date":"2024-12-30","orderId":"SA3C300160","vendor":"港香蘭","items":[{"name":"牛樟芝膠囊","qty":10.0,"price":1188.0,"unit":"斤"}],"total":11880,"status":"paid","paidDate":"2024-12-30","payMethod":"","payNote":"","note":""},{"id":"124","date":"2025-01-02","orderId":"M0029","vendor":"銓崧","items":[{"name":"黨參片(紋)","qty":2.0,"price":830.0,"unit":"斤"},{"name":"麥門冬","qty":10.0,"price":530.0,"unit":"斤"},{"name":"玉竹片","qty":3.0,"price":485.0,"unit":"斤"},{"name":"芡實","qty":10.0,"price":200.0,"unit":"斤"},{"name":"蓮子","qty":10.0,"price":245.0,"unit":"斤"},{"name":"黃精片(蜜製)","qty":3.0,"price":520.0,"unit":"斤"},{"name":"王不留行(炒)","qty":2.0,"price":150.0,"unit":"斤"}],"total":14725,"status":"paid","paidDate":"2025-01-02","payMethod":"","payNote":"","note":""},{"id":"34","date":"2025-01-03","orderId":"No.127950","vendor":"和盛記","items":[{"name":"貢王圓棗(黑棗)","qty":33.33,"price":180.0,"unit":"斤"}],"total":5999,"status":"paid","paidDate":"2025-01-03","payMethod":"","payNote":"","note":""},{"id":"60","date":"2025-01-06","orderId":"No.008310","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"}],"total":13800,"status":"paid","paidDate":"2025-01-06","payMethod":"","payNote":"","note":""},{"id":"111","date":"2025-01-06","orderId":"No.049304","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":150.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":2.0,"price":110.0,"unit":"斤"}],"total":33220,"status":"paid","paidDate":"2025-01-06","payMethod":"","payNote":"","note":""},{"id":"112","date":"2025-01-08","orderId":"No.049340","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":0.0,"unit":"斤"},{"name":"代付運費","qty":0,"price":0.0,"unit":"斤"}],"total":0,"status":"paid","paidDate":"2025-01-08","payMethod":"","payNote":"","note":""},{"id":"79","date":"2025-01-09","orderId":"11401090006","vendor":"三興","items":[{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"},{"name":"四製陳皮","qty":3.0,"price":270.0,"unit":"斤"}],"total":4110,"status":"paid","paidDate":"2025-01-09","payMethod":"","payNote":"","note":""},{"id":"49","date":"2025-01-13","orderId":"No.015917","vendor":"界順","items":[{"name":"散 超特紅棗片","qty":550.0,"price":80.0,"unit":"斤"}],"total":44000,"status":"paid","paidDate":"2025-01-13","payMethod":"","payNote":"","note":"30件"},{"id":"125","date":"2025-01-13","orderId":"M00768","vendor":"銓崧","items":[{"name":"決明子(炒)","qty":5.0,"price":70.0,"unit":"斤"},{"name":"天麻片(湖北)A","qty":5.0,"price":980.0,"unit":"斤"},{"name":"薏苡仁","qty":10.0,"price":65.0,"unit":"斤"},{"name":"蓮子","qty":10.0,"price":245.0,"unit":"斤"}],"total":8350,"status":"paid","paidDate":"2025-01-13","payMethod":"","payNote":"","note":""},{"id":"61","date":"2025-01-15","orderId":"No.008365","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"}],"total":13800,"status":"paid","paidDate":"2025-01-15","payMethod":"","payNote":"","note":""},{"id":"153","date":"2025-01-17","orderId":"S114010491","vendor":"美豐蔘藥行","items":[{"name":"粉光蔘金球(350g)","qty":50.0,"price":200.0,"unit":"斤"}],"total":10000,"status":"paid","paidDate":"2025-01-17","payMethod":"","payNote":"","note":""},{"id":"144","date":"2025-01-20","orderId":"SA41200092","vendor":"港香蘭","items":[{"name":"大柴胡湯","qty":2.0,"price":343.0,"unit":"斤"},{"name":"銀翹散","qty":2.0,"price":364.0,"unit":"斤"}],"total":1414,"status":"paid","paidDate":"2025-01-20","payMethod":"","payNote":"","note":""},{"id":"145","date":"2025-01-20","orderId":"SA41200134","vendor":"港香蘭","items":[{"name":"六味地黃丸","qty":1.0,"price":294.0,"unit":"斤"}],"total":1708,"status":"paid","paidDate":"2025-01-20","payMethod":"","payNote":"","note":""},{"id":"154","date":"2025-01-20","orderId":"1140120061","vendor":"清海化學工業有限公司","items":[{"name":"10g矽膠(透明日文版)","qty":3000.0,"price":1.68,"unit":"斤"}],"total":5040,"status":"paid","paidDate":"2025-01-20","payMethod":"","payNote":"","note":""},{"id":"126","date":"2025-01-21","orderId":"M01380","vendor":"銓崧","items":[{"name":"天麻片(湖北)A","qty":10.0,"price":980.0,"unit":"斤"},{"name":"黨參片(紋)","qty":1.0,"price":830.0,"unit":"斤"},{"name":"杜仲片 3mm","qty":5.0,"price":290.0,"unit":"斤"},{"name":"甘草片(梁)蜜炙片","qty":2.0,"price":335.0,"unit":"斤"},{"name":"玉竹片(津)壹級","qty":2.0,"price":485.0,"unit":"斤"}],"total":13720,"status":"paid","paidDate":"2025-01-21","payMethod":"","payNote":"","note":""},{"id":"155","date":"2025-02-04","orderId":"IS140204005","vendor":"福源瓜子行","items":[{"name":"陳皮化應子","qty":60.0,"price":125.0,"unit":"斤"}],"total":7500,"status":"paid","paidDate":"2025-02-04","payMethod":"","payNote":"","note":"已付清"},{"id":"35","date":"2025-02-06","orderId":"No.115790","vendor":"和盛記","items":[{"name":"龍牙百合","qty":5.0,"price":520.0,"unit":"斤"},{"name":"大紅八角","qty":5.0,"price":230.0,"unit":"斤"},{"name":"珍珠桃膠","qty":10.0,"price":260.0,"unit":"斤"},{"name":"特級若羌棗","qty":83.33,"price":155.0,"unit":"斤"},{"name":"大紅袍花椒","qty":2.0,"price":550.0,"unit":"斤"},{"name":"生機仙楂","qty":50.0,"price":70.0,"unit":"斤"}],"total":23867,"status":"paid","paidDate":"2025-02-06","payMethod":"","payNote":"","note":""},{"id":"80","date":"2025-02-06","orderId":"11402060039","vendor":"三興","items":[{"name":"生地黃片","qty":1.0,"price":270.0,"unit":"斤"},{"name":"熟地黃片","qty":5.0,"price":290.0,"unit":"斤"},{"name":"炒斜白勺片","qty":3.0,"price":390.0,"unit":"斤"},{"name":"棉茵陳","qty":1.0,"price":160.0,"unit":"斤"},{"name":"散貢羅漢果","qty":30.0,"price":13.0,"unit":"斤"}],"total":3440,"status":"paid","paidDate":"2025-02-06","payMethod":"","payNote":"","note":""},{"id":"21","date":"2025-02-07","orderId":"-","vendor":"廣生堂","items":[{"name":"(加)大尖尾","qty":100.0,"price":1700.0,"unit":"斤"}],"total":170000,"status":"paid","paidDate":"2025-02-07","payMethod":"","payNote":"","note":""},{"id":"156","date":"2025-02-12","orderId":"1140212018","vendor":"台灣多連嘉(清海化學工業)","items":[{"name":"脫氧劑","qty":3000.0,"price":1.26,"unit":"斤"}],"total":3780,"status":"paid","paidDate":"2025-02-12","payMethod":"","payNote":"","note":""},{"id":"81","date":"2025-02-17","orderId":"11402170070","vendor":"三興","items":[{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"},{"name":"特烏梅","qty":5.0,"price":180.0,"unit":"斤"},{"name":"北白杜仲(大丁黃)","qty":1.0,"price":120.0,"unit":"斤"},{"name":"生川酸棗仁","qty":1.0,"price":2200.0,"unit":"斤"}],"total":6520,"status":"paid","paidDate":"2025-02-17","payMethod":"","payNote":"","note":""},{"id":"62","date":"2025-02-18","orderId":"No.008496","vendor":"明(坤贊)","items":[{"name":"昌羊","qty":1.0,"price":900.0,"unit":"斤"}],"total":900,"status":"paid","paidDate":"2025-02-18","payMethod":"","payNote":"","note":""},{"id":"22","date":"2025-02-20","orderId":"43190","vendor":"廣生堂","items":[{"name":"(美)中尖尾","qty":30.0,"price":1900.0,"unit":"斤"}],"total":57000,"status":"paid","paidDate":"2025-02-20","payMethod":"","payNote":"","note":""},{"id":"36","date":"2025-02-20","orderId":"No.116418","vendor":"和盛記","items":[{"name":"超特若羌棗","qty":83.33,"price":155.0,"unit":"斤"},{"name":"山東阿膠","qty":1.0,"price":1600.0,"unit":"斤"}],"total":14517,"status":"paid","paidDate":"2025-02-20","payMethod":"","payNote":"","note":""},{"id":"157","date":"2025-02-20","orderId":"11402200005","vendor":"翌超有限公司","items":[{"name":"梅酒瓶","qty":48.0,"price":45.0,"unit":"斤"}],"total":2160,"status":"paid","paidDate":"2025-02-20","payMethod":"","payNote":"","note":"已付清"},{"id":"37","date":"2025-02-21","orderId":"No.116499","vendor":"和盛記","items":[{"name":"超特新疆雞心棗","qty":112.5,"price":150.0,"unit":"斤"}],"total":16875,"status":"paid","paidDate":"2025-02-21","payMethod":"","payNote":"","note":""},{"id":"127","date":"2025-02-24","orderId":"M03145","vendor":"銓崧","items":[{"name":"何首烏片(豆製)薄","qty":5.0,"price":355.0,"unit":"斤"},{"name":"杜仲片(黑)2mm","qty":5.0,"price":240.0,"unit":"斤"},{"name":"蓮子(寶)","qty":10.0,"price":245.0,"unit":"斤"},{"name":"薏苡仁","qty":20.0,"price":65.0,"unit":"斤"}],"total":6725,"status":"paid","paidDate":"2025-02-24","payMethod":"","payNote":"","note":""},{"id":"128","date":"2025-02-24","orderId":"M03189","vendor":"銓崧","items":[{"name":"麥門冬(川)特級","qty":5.0,"price":530.0,"unit":"斤"}],"total":2650,"status":"paid","paidDate":"2025-02-24","payMethod":"","payNote":"","note":""},{"id":"158","date":"2025-02-25","orderId":"3680","vendor":"泓銘","items":[{"name":"當歸尾片","qty":30.0,"price":480.0,"unit":"斤"}],"total":14400,"status":"paid","paidDate":"2025-02-25","payMethod":"","payNote":"","note":"對扣帳"},{"id":"113","date":"2025-02-26","orderId":"No.049666","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":110.0,"unit":"斤"}],"total":16610,"status":"paid","paidDate":"2025-02-26","payMethod":"","payNote":"","note":""},{"id":"146","date":"2025-02-26","orderId":"SA42260099","vendor":"港香蘭","items":[{"name":"銀翹散","qty":4.0,"price":364.0,"unit":"斤"}],"total":1456,"status":"paid","paidDate":"2025-02-26","payMethod":"","payNote":"","note":""},{"id":"159","date":"2025-03-02","orderId":"-","vendor":"萬山行","items":[{"name":"菊花","qty":3.0,"price":1550.0,"unit":"斤"}],"total":4650,"status":"paid","paidDate":"2025-03-02","payMethod":"","payNote":"","note":""},{"id":"114","date":"2025-03-03","orderId":"No.049692","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":110.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":2.0,"price":110.0,"unit":"斤"}],"total":36520,"status":"paid","paidDate":"2025-03-03","payMethod":"","payNote":"","note":""},{"id":"147","date":"2025-03-03","orderId":"SA43030167","vendor":"港香蘭","items":[{"name":"七匣散","qty":2.0,"price":630.0,"unit":"斤"}],"total":1260,"status":"paid","paidDate":"2025-03-03","payMethod":"","payNote":"","note":"沒折扣"},{"id":"63","date":"2025-03-04","orderId":"No.008561","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"}],"total":13800,"status":"paid","paidDate":"2025-03-04","payMethod":"","payNote":"","note":""},{"id":"38","date":"2025-03-05","orderId":"No.117010","vendor":"和盛記","items":[{"name":"(王)生機枸杞","qty":120.0,"price":235.0,"unit":"斤"}],"total":28200,"status":"paid","paidDate":"2025-03-05","payMethod":"","payNote":"","note":""},{"id":"50","date":"2025-03-06","orderId":"No.016687","vendor":"界順","items":[{"name":"180杞王","qty":36.66,"price":180.0,"unit":"斤"},{"name":"2A杞王","qty":120.0,"price":160.0,"unit":"斤"}],"total":25800,"status":"paid","paidDate":"2025-03-06","payMethod":"","payNote":"","note":"散巴-2"},{"id":"82","date":"2025-03-06","orderId":"11403060002","vendor":"三興","items":[{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"},{"name":"天門冬片","qty":1.0,"price":440.0,"unit":"斤"},{"name":"炒斜白芍片","qty":5.0,"price":390.0,"unit":"斤"},{"name":"熟地黃片","qty":5.0,"price":290.0,"unit":"斤"},{"name":"散貢羅漢果","qty":50.0,"price":13.0,"unit":"斤"}],"total":7790,"status":"paid","paidDate":"2025-03-06","payMethod":"","payNote":"","note":""},{"id":"160","date":"2025-03-06","orderId":"114030053","vendor":"久代貿易","items":[{"name":"通血透骨膏","qty":500.0,"price":7.0,"unit":"斤"}],"total":3500,"status":"paid","paidDate":"2025-03-06","payMethod":"","payNote":"","note":""},{"id":"51","date":"2025-03-10","orderId":"No.016749","vendor":"界順","items":[{"name":"180杞王","qty":146.66,"price":180.0,"unit":"斤"}],"total":26400,"status":"paid","paidDate":"2025-03-10","payMethod":"","payNote":"","note":"惟元4A 4件X22K"},{"id":"39","date":"2025-03-12","orderId":"No.117040","vendor":"和盛記","items":[{"name":"龍牙百合","qty":10.0,"price":520.0,"unit":"斤"},{"name":"管花肉蓯蓉","qty":2.0,"price":650.0,"unit":"斤"},{"name":"貢王圓棗(黑棗)","qty":50.0,"price":180.0,"unit":"斤"}],"total":15500,"status":"paid","paidDate":"2025-03-12","payMethod":"","payNote":"","note":""},{"id":"129","date":"2025-03-12","orderId":"M04271","vendor":"銓崧","items":[{"name":"芡實","qty":10.0,"price":200.0,"unit":"斤"},{"name":"蓮子","qty":10.0,"price":250.0,"unit":"斤"},{"name":"甘草片","qty":2.0,"price":335.0,"unit":"斤"},{"name":"玉竹片","qty":2.0,"price":485.0,"unit":"斤"},{"name":"麥門冬","qty":10.0,"price":530.0,"unit":"斤"},{"name":"黃精片","qty":2.0,"price":520.0,"unit":"斤"},{"name":"山茱萸","qty":1.0,"price":400.0,"unit":"斤"}],"total":12880,"status":"paid","paidDate":"2025-03-12","payMethod":"","payNote":"","note":""},{"id":"161","date":"2025-03-18","orderId":"2025031803","vendor":"世傑生物科技有限公司(瑞傑)","items":[{"name":"HC印尼蘇島鹿角(中頭段)","qty":100.0,"price":800.0,"unit":"斤"}],"total":80000,"status":"paid","paidDate":"2025-03-18","payMethod":"","payNote":"","note":""},{"id":"23","date":"2025-03-19","orderId":"43267","vendor":"廣生堂","items":[{"name":"(美)特尖","qty":5.0,"price":2400.0,"unit":"斤"}],"total":12000,"status":"paid","paidDate":"2025-03-19","payMethod":"","payNote":"","note":""},{"id":"24","date":"2025-03-21","orderId":"43273","vendor":"廣生堂","items":[{"name":"4號長泡","qty":7.0,"price":46000.0,"unit":"斤"},{"name":"(美)特尖","qty":38.0,"price":2400.0,"unit":"斤"}],"total":413200,"status":"paid","paidDate":"2025-03-21","payMethod":"","payNote":"","note":"惟元小長"},{"id":"52","date":"2025-03-26","orderId":"No.016804","vendor":"界順","items":[{"name":"盒封模卷茯苓","qty":50.0,"price":170.0,"unit":"斤"}],"total":8500,"status":"paid","paidDate":"2025-03-26","payMethod":"","payNote":"","note":""},{"id":"64","date":"2025-03-27","orderId":"No.008655","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"}],"total":13800,"status":"paid","paidDate":"2025-03-27","payMethod":"","payNote":"","note":""},{"id":"130","date":"2025-03-27","orderId":"M05279","vendor":"銓崧","items":[{"name":"天麻片(湖北)A","qty":10.0,"price":980.0,"unit":"斤"},{"name":"丹參片(川)特級","qty":10.0,"price":345.0,"unit":"斤"},{"name":"黃芩片(野)酒製","qty":2.0,"price":395.0,"unit":"斤"}],"total":14040,"status":"paid","paidDate":"2025-03-27","payMethod":"","payNote":"","note":""},{"id":"162","date":"2025-04-01","orderId":"No.S013782","vendor":"鑫榮興業","items":[{"name":"FS1603R","qty":108.0,"price":18.0,"unit":"斤"}],"total":1944,"status":"paid","paidDate":"2025-04-01","payMethod":"","payNote":"","note":"2件,付清"},{"id":"83","date":"2025-04-02","orderId":"11404020019","vendor":"三興","items":[{"name":"玉米鬚","qty":1.0,"price":130.0,"unit":"斤"},{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"}],"total":3430,"status":"paid","paidDate":"2025-04-02","payMethod":"","payNote":"","note":""},{"id":"163","date":"2025-04-09","orderId":"","vendor":"圓創包裝","items":[{"name":"香料隨手包","qty":5.0,"price":109.0,"unit":"斤"}],"total":545,"status":"paid","paidDate":"2025-04-09","payMethod":"","payNote":"","note":"付清"},{"id":"25","date":"2025-04-14","orderId":"43292","vendor":"廣生堂","items":[{"name":"半野特大圓粒","qty":50.0,"price":3800.0,"unit":"斤"},{"name":"半野1號圓粒","qty":30.0,"price":3500.0,"unit":"斤"}],"total":295000,"status":"paid","paidDate":"2025-04-14","payMethod":"","payNote":"","note":""},{"id":"164","date":"2025-04-14","orderId":"IS140414007","vendor":"福源瓜子行","items":[{"name":"陳皮化應子","qty":60.0,"price":125.0,"unit":"斤"}],"total":7500,"status":"paid","paidDate":"2025-04-14","payMethod":"","payNote":"","note":""},{"id":"53","date":"2025-04-15","orderId":"No.018602","vendor":"界順","items":[{"name":"散 特級棗圈","qty":550.0,"price":80.0,"unit":"斤"}],"total":44000,"status":"paid","paidDate":"2025-04-15","payMethod":"","payNote":"","note":"30件"},{"id":"65","date":"2025-04-18","orderId":"No.008745","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"}],"total":13800,"status":"paid","paidDate":"2025-04-18","payMethod":"","payNote":"","note":""},{"id":"84","date":"2025-04-28","orderId":"11404280026","vendor":"三興","items":[{"name":"特烏梅","qty":5.0,"price":180.0,"unit":"斤"},{"name":"野生大丁甘草片","qty":10.0,"price":330.0,"unit":"斤"},{"name":"四製陳皮","qty":5.0,"price":270.0,"unit":"斤"}],"total":5550,"status":"paid","paidDate":"2025-04-28","payMethod":"","payNote":"","note":""},{"id":"131","date":"2025-04-28","orderId":"M07279","vendor":"銓崧","items":[{"name":"廣藿香","qty":2.0,"price":155.0,"unit":"斤"},{"name":"決明子(炒)","qty":10.0,"price":70.0,"unit":"斤"},{"name":"蓮子(寶)","qty":10.0,"price":245.0,"unit":"斤"},{"name":"香附片","qty":2.0,"price":165.0,"unit":"斤"},{"name":"甘草片 蜜炙","qty":2.0,"price":335.0,"unit":"斤"},{"name":"玉竹片","qty":2.0,"price":485.0,"unit":"斤"},{"name":"杜仲片","qty":5.0,"price":240.0,"unit":"斤"}],"total":6630,"status":"paid","paidDate":"2025-04-28","payMethod":"","payNote":"","note":""},{"id":"85","date":"2025-04-30","orderId":"11404300009","vendor":"三興","items":[{"name":"炒白芍片","qty":2.0,"price":390.0,"unit":"斤"},{"name":"熟地黃","qty":0,"price":0,"unit":"斤"},{"name":"羅漢果","qty":50.0,"price":13.0,"unit":"斤"},{"name":"生機白木耳(璟元堂)","qty":0.5,"price":330.0,"unit":"斤"}],"total":1595,"status":"paid","paidDate":"2025-04-30","payMethod":"","payNote":"","note":""},{"id":"115","date":"2025-05-06","orderId":"No.050115","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":110.0,"unit":"斤"}],"total":16610,"status":"paid","paidDate":"2025-05-06","payMethod":"","payNote":"","note":""},{"id":"26","date":"2025-05-08","orderId":"43312","vendor":"廣生堂","items":[{"name":"半野2號圓粒","qty":50.0,"price":3500.0,"unit":"斤"}],"total":175000,"status":"paid","paidDate":"2025-05-08","payMethod":"","payNote":"","note":""},{"id":"150","date":"2025-05-12","orderId":"No.009232","vendor":"源山","items":[{"name":"魚腥草","qty":3.0,"price":130.0,"unit":"斤"},{"name":"薄荷","qty":3.0,"price":130.0,"unit":"斤"}],"total":780,"status":"paid","paidDate":"2025-05-12","payMethod":"","payNote":"","note":"現金付清"},{"id":"165","date":"2025-05-12","orderId":"IS140512004","vendor":"福源瓜子行","items":[{"name":"微薰李","qty":20.0,"price":240.0,"unit":"斤"}],"total":4800,"status":"paid","paidDate":"2025-05-12","payMethod":"","payNote":"","note":""},{"id":"167","date":"2025-05-14","orderId":"40514017","vendor":"鴻龍","items":[{"name":"原色珠貝","qty":1.0,"price":15300.0,"unit":"斤"}],"total":15300,"status":"paid","paidDate":"2025-05-14","payMethod":"","payNote":"","note":""},{"id":"86","date":"2025-05-15","orderId":"11405150002","vendor":"三興","items":[{"name":"荊芥穗","qty":1.0,"price":320.0,"unit":"斤"},{"name":"野生大黃芩片","qty":2.0,"price":340.0,"unit":"斤"},{"name":"金銀花","qty":3.0,"price":420.0,"unit":"斤"},{"name":"瓜摟實","qty":2.0,"price":130.0,"unit":"斤"},{"name":"北板藍根","qty":2.0,"price":210.0,"unit":"斤"},{"name":"特烏梅","qty":10.0,"price":180.0,"unit":"斤"},{"name":"帶皮茯神片","qty":1.0,"price":260.0,"unit":"斤"},{"name":"澤瀉片(鹽製）","qty":2.0,"price":230.0,"unit":"斤"},{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"}],"total":8760,"status":"paid","paidDate":"2025-05-15","payMethod":"","payNote":"","note":""},{"id":"66","date":"2025-05-19","orderId":"No.008877","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-05-19","payMethod":"","payNote":"","note":""},{"id":"132","date":"2025-05-19","orderId":"M08521","vendor":"銓崧","items":[{"name":"甘草片(蜜炙）","qty":2.0,"price":335.0,"unit":"斤"},{"name":"黨蔘片","qty":1.0,"price":830.0,"unit":"斤"},{"name":"蓮子","qty":10.0,"price":245.0,"unit":"斤"},{"name":"芡實","qty":10.0,"price":200.0,"unit":"斤"},{"name":"薏苡仁","qty":10.0,"price":65.0,"unit":"斤"},{"name":"玉竹片","qty":2.0,"price":485.0,"unit":"斤"}],"total":7570,"status":"paid","paidDate":"2025-05-19","payMethod":"","payNote":"","note":""},{"id":"166","date":"2025-05-20","orderId":"S114050599","vendor":"美豐蔘藥行","items":[{"name":"粉光蔘金球(350g)","qty":50.0,"price":200.0,"unit":"斤"}],"total":10000,"status":"paid","paidDate":"2025-05-20","payMethod":"","payNote":"","note":""},{"id":"168","date":"2025-05-21","orderId":"IS140521004","vendor":"福源瓜子行","items":[{"name":"甘甜梅","qty":5.0,"price":160.0,"unit":"斤"}],"total":800,"status":"paid","paidDate":"2025-05-21","payMethod":"","payNote":"","note":""},{"id":"170","date":"2025-05-22","orderId":"","vendor":"萬山行","items":[{"name":"白菊花","qty":3.0,"price":1500.0,"unit":"斤"}],"total":4500,"status":"paid","paidDate":"2025-05-22","payMethod":"","payNote":"","note":""},{"id":"40","date":"2025-05-26","orderId":"No.119957","vendor":"和盛記","items":[{"name":"超特新疆雞心棗","qty":33.33,"price":150.0,"unit":"斤"},{"name":"珍珠桃膠","qty":20.0,"price":260.0,"unit":"斤"}],"total":10200,"status":"paid","paidDate":"2025-05-26","payMethod":"","payNote":"","note":""},{"id":"87","date":"2025-05-26","orderId":"11405260013","vendor":"三興","items":[{"name":"三七粒(20頭）","qty":10.0,"price":900.0,"unit":"斤"},{"name":"防風片","qty":2.0,"price":280.0,"unit":"斤"},{"name":"藿香","qty":1.0,"price":160.0,"unit":"斤"},{"name":"炒白芍","qty":3.0,"price":390.0,"unit":"斤"},{"name":"金銀花","qty":2.0,"price":420.0,"unit":"斤"},{"name":"荊芥穗","qty":2.0,"price":320.0,"unit":"斤"}],"total":12370,"status":"paid","paidDate":"2025-05-26","payMethod":"","payNote":"","note":""},{"id":"169","date":"2025-05-28","orderId":"No.000353","vendor":"中冬金元","items":[{"name":"番紅花","qty":10.0,"price":1650.0,"unit":"斤"}],"total":16500,"status":"paid","paidDate":"2025-05-28","payMethod":"","payNote":"","note":""},{"id":"148","date":"2025-05-29","orderId":"SA452900119","vendor":"港香蘭","items":[{"name":"銀翹散","qty":3.0,"price":390.0,"unit":"斤"},{"name":"青黛喉藥散","qty":10.0,"price":200.0,"unit":"斤"},{"name":"清肺湯","qty":1.0,"price":435.0,"unit":"斤"}],"total":3605,"status":"paid","paidDate":"2025-05-29","payMethod":"","payNote":"","note":""},{"id":"151","date":"2025-06-02","orderId":"No.138534","vendor":"源山","items":[{"name":"本桑葉","qty":2.0,"price":90.0,"unit":"斤"},{"name":"本薄荷","qty":3.0,"price":130.0,"unit":"斤"},{"name":"本魚腥草","qty":3.0,"price":130.0,"unit":"斤"}],"total":960,"status":"paid","paidDate":"2025-06-02","payMethod":"","payNote":"","note":"現金付清"},{"id":"173","date":"2025-06-03","orderId":"202506030004","vendor":"上景印刷","items":[{"name":"1F空白標籤(6*3)","qty":100000.0,"price":0.18,"unit":"斤"}],"total":18000,"status":"paid","paidDate":"2025-06-03","payMethod":"","payNote":"","note":""},{"id":"41","date":"2025-06-05","orderId":"No.130276","vendor":"和盛記","items":[{"name":"超特新疆雞心棗","qty":333.33,"price":150.0,"unit":"斤"},{"name":"雙莢雪蓮片","qty":10.0,"price":580.0,"unit":"斤"}],"total":55800,"status":"paid","paidDate":"2025-06-05","payMethod":"","payNote":"","note":""},{"id":"171","date":"2025-06-11","orderId":"1140611001","vendor":"新世紀漢方","items":[{"name":"花旗蔘銀耳露(六入禮盒)","qty":4.0,"price":350.0,"unit":"斤"}],"total":1400,"status":"paid","paidDate":"2025-06-11","payMethod":"","payNote":"","note":""},{"id":"88","date":"2025-06-12","orderId":"11406120001","vendor":"三興","items":[{"name":"散貢羅漢果","qty":50.0,"price":13.0,"unit":"斤"},{"name":"玉米鬚","qty":1.0,"price":130.0,"unit":"斤"},{"name":"黑桑葚子","qty":1.0,"price":170.0,"unit":"斤"}],"total":950,"status":"paid","paidDate":"2025-06-12","payMethod":"","payNote":"","note":""},{"id":"172","date":"2025-06-14","orderId":"40514017","vendor":"鴻龍","items":[{"name":"原色珠貝","qty":1.0,"price":15300.0,"unit":"斤"}],"total":15300,"status":"paid","paidDate":"2025-06-14","payMethod":"","payNote":"","note":""},{"id":"68","date":"2025-06-19","orderId":"-","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-06-19","payMethod":"","payNote":"","note":""},{"id":"89","date":"2025-06-19","orderId":"11406190051","vendor":"三興","items":[{"name":"鐵棍淮山片","qty":10.0,"price":330.0,"unit":"斤"},{"name":"澤瀉片","qty":2.0,"price":230.0,"unit":"斤"},{"name":"四製陳皮","qty":2.0,"price":270.0,"unit":"斤"},{"name":"炒白芍片","qty":2.0,"price":390.0,"unit":"斤"},{"name":"熟地黃片","qty":2.0,"price":290.0,"unit":"斤"},{"name":"車前子","qty":1.0,"price":120.0,"unit":"斤"},{"name":"黃柏片","qty":1.0,"price":360.0,"unit":"斤"}],"total":6140,"status":"paid","paidDate":"2025-06-19","payMethod":"","payNote":"","note":""},{"id":"67","date":"2025-06-20","orderId":"No.009471","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":10.0,"price":230.0,"unit":"斤"},{"name":"包土朮","qty":1.0,"price":530.0,"unit":"斤"}],"total":2830,"status":"paid","paidDate":"2025-06-20","payMethod":"","payNote":"","note":""},{"id":"133","date":"2025-06-23","orderId":"M10738","vendor":"銓崧","items":[{"name":"天麻片","qty":5.0,"price":980.0,"unit":"斤"},{"name":"王不留行","qty":2.0,"price":150.0,"unit":"斤"},{"name":"蜜炙甘草片","qty":2.0,"price":335.0,"unit":"斤"},{"name":"丹蔘片","qty":2.0,"price":345.0,"unit":"斤"},{"name":"杜仲片","qty":3.0,"price":290.0,"unit":"斤"},{"name":"薏苡仁","qty":10.0,"price":65.0,"unit":"斤"},{"name":"山茱萸","qty":2.0,"price":400.0,"unit":"斤"},{"name":"熟地黃","qty":2.0,"price":520.0,"unit":"斤"},{"name":"川牛膝","qty":2.0,"price":310.0,"unit":"斤"}],"total":10540,"status":"paid","paidDate":"2025-06-23","payMethod":"","payNote":"","note":""},{"id":"116","date":"2025-06-25","orderId":"No.053086","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":110.0,"unit":"斤"}],"total":16610,"status":"paid","paidDate":"2025-06-25","payMethod":"","payNote":"","note":""},{"id":"117","date":"2025-06-26","orderId":"No.053090","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":190.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":4.0,"price":110.0,"unit":"斤"}],"total":63140,"status":"paid","paidDate":"2025-06-26","payMethod":"","payNote":"","note":""},{"id":"54","date":"2025-07-02","orderId":"No.000163","vendor":"界順","items":[{"name":"2A杞王","qty":120.0,"price":160.0,"unit":"斤"},{"name":"150杞王","qty":110.0,"price":210.0,"unit":"斤"}],"total":42300,"status":"paid","paidDate":"2025-07-02","payMethod":"","payNote":"","note":"惟元5A 3件X22K"},{"id":"42","date":"2025-07-03","orderId":"No.131396","vendor":"和盛記","items":[{"name":"生機仙楂","qty":50.0,"price":70.0,"unit":"斤"},{"name":"大紅八角","qty":3.0,"price":230.0,"unit":"斤"},{"name":"白果仁","qty":1.0,"price":110.0,"unit":"斤"},{"name":"酸棗仁","qty":1.0,"price":1650.0,"unit":"斤"}],"total":5950,"status":"paid","paidDate":"2025-07-03","payMethod":"","payNote":"","note":""},{"id":"90","date":"2025-07-03","orderId":"11407030003","vendor":"三興","items":[{"name":"散貢羅漢果","qty":50.0,"price":13.0,"unit":"斤"},{"name":"特烏梅","qty":5.0,"price":180.0,"unit":"斤"},{"name":"光中南杏","qty":5.0,"price":155.0,"unit":"斤"},{"name":"肇慶芡實(一等)","qty":1.0,"price":160.0,"unit":"斤"}],"total":2485,"status":"paid","paidDate":"2025-07-03","payMethod":"","payNote":"","note":""},{"id":"134","date":"2025-07-08","orderId":"M11709","vendor":"銓崧","items":[{"name":"黃精片(蜜製)","qty":5.0,"price":520.0,"unit":"斤"},{"name":"麥門冬(川)","qty":5.0,"price":570.0,"unit":"斤"},{"name":"杜仲片 2mm","qty":5.0,"price":240.0,"unit":"斤"},{"name":"丹蔘片(川)","qty":5.0,"price":345.0,"unit":"斤"}],"total":8375,"status":"paid","paidDate":"2025-07-08","payMethod":"","payNote":"","note":""},{"id":"174","date":"2025-07-08","orderId":"40708016","vendor":"鴻龍","items":[{"name":"生元貝仔","qty":50.0,"price":170.0,"unit":"斤"}],"total":8500,"status":"paid","paidDate":"2025-07-08","payMethod":"","payNote":"","note":""},{"id":"69","date":"2025-07-10","orderId":"No.009449","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-07-10","payMethod":"","payNote":"","note":""},{"id":"91","date":"2025-07-10","orderId":"11407100008","vendor":"三興","items":[{"name":"肇慶芡實(0.8)","qty":2.0,"price":140.0,"unit":"斤"},{"name":"肇慶芡實(0.9)","qty":2.0,"price":150.0,"unit":"斤"},{"name":"蜜製野生甘草片","qty":1.0,"price":320.0,"unit":"斤"}],"total":900,"status":"paid","paidDate":"2025-07-10","payMethod":"","payNote":"","note":""},{"id":"27","date":"2025-07-11","orderId":"43858","vendor":"廣生堂","items":[{"name":"(韓)太極洋蔘(短)","qty":50.0,"price":4000.0,"unit":"斤"}],"total":200000,"status":"paid","paidDate":"2025-07-11","payMethod":"","payNote":"","note":""},{"id":"92","date":"2025-07-11","orderId":"11407110029","vendor":"三興","items":[{"name":"川牛膝片","qty":1.0,"price":260.0,"unit":"斤"}],"total":260,"status":"paid","paidDate":"2025-07-11","payMethod":"","payNote":"","note":""},{"id":"176","date":"2025-07-15","orderId":"1140715011","vendor":"新世紀漢方","items":[{"name":"花旗蔘銀耳露(六入禮盒)","qty":4.0,"price":350.0,"unit":"斤"}],"total":1400,"status":"paid","paidDate":"2025-07-15","payMethod":"","payNote":"","note":""},{"id":"93","date":"2025-07-21","orderId":"11407210007","vendor":"三興","items":[{"name":"特級金銀花","qty":2.0,"price":300.0,"unit":"斤"},{"name":"肇慶芡實(0.9)","qty":10.0,"price":150.0,"unit":"斤"},{"name":"鐵棍淮山","qty":10.0,"price":330.0,"unit":"斤"},{"name":"熟地黃片","qty":2.0,"price":290.0,"unit":"斤"},{"name":"蜜製野生甘草片","qty":3.0,"price":320.0,"unit":"斤"}],"total":7140,"status":"paid","paidDate":"2025-07-21","payMethod":"","payNote":"","note":""},{"id":"94","date":"2025-07-21","orderId":"11407210053","vendor":"三興","items":[{"name":"甜百合","qty":2.0,"price":570.0,"unit":"斤"}],"total":1140,"status":"paid","paidDate":"2025-07-21","payMethod":"","payNote":"","note":""},{"id":"175","date":"2025-07-21","orderId":"40721009","vendor":"鴻龍","items":[{"name":"2A霍山石斛","qty":1.0,"price":5000.0,"unit":"斤"}],"total":5000,"status":"paid","paidDate":"2025-07-21","payMethod":"","payNote":"","note":"8/8付現,"},{"id":"95","date":"2025-07-28","orderId":"11407280002","vendor":"三興","items":[{"name":"羅漢果","qty":100.0,"price":13.0,"unit":"斤"}],"total":1300,"status":"paid","paidDate":"2025-07-28","payMethod":"","payNote":"","note":""},{"id":"135","date":"2025-07-30","orderId":"M13059","vendor":"銓崧","items":[{"name":"薏苡仁","qty":25.0,"price":65.0,"unit":"斤"},{"name":"地龍干","qty":1.0,"price":1250.0,"unit":"斤"},{"name":"川牛膝片","qty":3.0,"price":310.0,"unit":"斤"},{"name":"何首烏片","qty":5.0,"price":360.0,"unit":"斤"},{"name":"黃精片","qty":5.0,"price":520.0,"unit":"斤"},{"name":"杜仲片 2mm","qty":5.0,"price":240.0,"unit":"斤"}],"total":9405,"status":"paid","paidDate":"2025-07-30","payMethod":"","payNote":"","note":""},{"id":"70","date":"2025-08-01","orderId":"No.009322","vendor":"明(坤贊)","items":[{"name":"盒炒芍","qty":5.0,"price":400.0,"unit":"斤"},{"name":"特炊芎","qty":5.0,"price":230.0,"unit":"斤"}],"total":3150,"status":"paid","paidDate":"2025-08-01","payMethod":"","payNote":"","note":""},{"id":"96","date":"2025-08-05","orderId":"11408050018","vendor":"三興","items":[{"name":"甜百合","qty":3.0,"price":570.0,"unit":"斤"},{"name":"四製陳皮-盒1.1","qty":2.0,"price":270.0,"unit":"斤"},{"name":"熟地黃片/久製(一等)盒0.7","qty":2.0,"price":290.0,"unit":"斤"},{"name":"生地黃片(二等)盒0.7","qty":4.0,"price":270.0,"unit":"斤"},{"name":"中茜草根片(正品)盒1.4","qty":1.0,"price":1150.0,"unit":"斤"}],"total":5060,"status":"paid","paidDate":"2025-08-05","payMethod":"","payNote":"","note":""},{"id":"177","date":"2025-08-08","orderId":"20250808-02","vendor":"宏笙包裝","items":[{"name":"牧野真真空袋270*305mm","qty":10600.0,"price":3.55,"unit":"斤"}],"total":37630,"status":"paid","paidDate":"2025-08-08","payMethod":"","payNote":"","note":""},{"id":"71","date":"2025-08-11","orderId":"No.009215","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-08-11","payMethod":"","payNote":"","note":""},{"id":"97","date":"2025-08-14","orderId":"11408140006","vendor":"三興","items":[{"name":"石菖蒲片","qty":1.0,"price":300.0,"unit":"斤"},{"name":"野生大丁甘草片","qty":5.0,"price":330.0,"unit":"斤"},{"name":"特烏梅(260粒)","qty":10.0,"price":180.0,"unit":"斤"},{"name":"肇慶芡實(0.9)","qty":10.0,"price":150.0,"unit":"斤"},{"name":"黑桑椹子(熟)(檢驗合格)","qty":1.0,"price":170.0,"unit":"斤"}],"total":5420,"status":"paid","paidDate":"2025-08-14","payMethod":"","payNote":"","note":""},{"id":"28","date":"2025-08-18","orderId":"43877","vendor":"廣生堂","items":[{"name":"美國40尖(貢尖)","qty":10.0,"price":2700.0,"unit":"斤"},{"name":"美國60尖(特尖)","qty":20.0,"price":2400.0,"unit":"斤"}],"total":75000,"status":"paid","paidDate":"2025-08-18","payMethod":"","payNote":"","note":""},{"id":"178","date":"2025-08-20","orderId":"140820012","vendor":"福源瓜子行","items":[{"name":"微薰李","qty":20.0,"price":240.0,"unit":"斤"}],"total":4800,"status":"paid","paidDate":"2025-08-20","payMethod":"","payNote":"","note":""},{"id":"55","date":"2025-08-21","orderId":"No.001035","vendor":"界順","items":[{"name":"180杞王","qty":220.0,"price":180.0,"unit":"斤"}],"total":39600,"status":"paid","paidDate":"2025-08-21","payMethod":"","payNote":"","note":""},{"id":"98","date":"2025-08-21","orderId":"11408210003","vendor":"三興","items":[{"name":"生川酸棗仁","qty":1.0,"price":1850.0,"unit":"斤"},{"name":"蜜製野生丁甘草片","qty":5.0,"price":320.0,"unit":"斤"},{"name":"鐵棍淮山片.盒.9","qty":10.0,"price":320.0,"unit":"斤"}],"total":6650,"status":"paid","paidDate":"2025-08-21","payMethod":"","payNote":"","note":""},{"id":"43","date":"2025-08-22","orderId":"133177","vendor":"和盛記","items":[{"name":"山東阿膠","qty":1.0,"price":1600.0,"unit":"斤"},{"name":"陝西大紅袍花椒","qty":2.0,"price":380.0,"unit":"斤"},{"name":"正宗大紅袍花椒","qty":2.0,"price":550.0,"unit":"斤"},{"name":"特級若羌棗","qty":83.33,"price":155.0,"unit":"斤"},{"name":"5特生機枸杞","qty":40.0,"price":185.0,"unit":"斤"},{"name":"(王)生機枸杞","qty":40.0,"price":235.0,"unit":"斤"}],"total":33177,"status":"paid","paidDate":"2025-08-22","payMethod":"","payNote":"","note":""},{"id":"44","date":"2025-08-25","orderId":"133182","vendor":"和盛記","items":[{"name":"(王)生機枸杞","qty":160.0,"price":235.0,"unit":"斤"},{"name":"5特生機枸杞","qty":39.0,"price":-185.0,"unit":"斤"}],"total":7215,"status":"paid","paidDate":"2025-08-25","payMethod":"","payNote":"","note":"退貨"},{"id":"149","date":"2025-08-25","orderId":"SA48250062","vendor":"港香蘭","items":[{"name":"青黛喉藥散(8g/罐)(6104)","qty":10.0,"price":200.0,"unit":"斤"},{"name":"溫經熱飲(6g×12包)(5801)","qty":3.0,"price":260.0,"unit":"斤"}],"total":2780,"status":"paid","paidDate":"2025-08-25","payMethod":"","payNote":"","note":""},{"id":"72","date":"2025-09-02","orderId":"No.009112","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-09-02","payMethod":"","payNote":"","note":""},{"id":"99","date":"2025-09-08","orderId":"1140908031","vendor":"三興","items":[{"name":"福建澤瀉片/鹽製(盒1.1)","qty":0,"price":230.0,"unit":"斤"},{"name":"甜百合","qty":0,"price":570.0,"unit":"斤"},{"name":"精選洛神花(檢驗合格)(中國)","qty":0,"price":230.0,"unit":"斤"},{"name":"熟地黃片/酒製(一等)盒0.7","qty":0,"price":290.0,"unit":"斤"},{"name":"生川酸棗仁","qty":0,"price":1450.0,"unit":"斤"},{"name":"胖大海-大粒(越南)-需冷藏","qty":0,"price":520.0,"unit":"斤"},{"name":"散貢羅漢果(2粒/包)","qty":0,"price":13.0,"unit":"斤"}],"total":8190,"status":"paid","paidDate":"2025-09-08","payMethod":"","payNote":"","note":""},{"id":"100","date":"2025-09-15","orderId":"11409150068","vendor":"三興","items":[{"name":"四製陳皮","qty":5.0,"price":270.0,"unit":"斤"}],"total":1350,"status":"paid","paidDate":"2025-09-15","payMethod":"","payNote":"","note":""},{"id":"179","date":"2025-09-17","orderId":"-","vendor":"建興包裝材料行","items":[{"name":"真空夾立半斤","qty":10.0,"price":155.0,"unit":"斤"}],"total":1550,"status":"paid","paidDate":"2025-09-17","payMethod":"","payNote":"","note":"付清"},{"id":"101","date":"2025-09-18","orderId":"11409180003","vendor":"三興","items":[{"name":"鐵棍淮山","qty":10.0,"price":320.0,"unit":"斤"}],"total":3200,"status":"paid","paidDate":"2025-09-18","payMethod":"","payNote":"","note":""},{"id":"73","date":"2025-09-23","orderId":"No.009009","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運金","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-09-23","payMethod":"","payNote":"","note":""},{"id":"74","date":"2025-10-03","orderId":"9048","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":10.0,"price":230.0,"unit":"斤"}],"total":2300,"status":"paid","paidDate":"2025-10-03","payMethod":"","payNote":"","note":""},{"id":"180","date":"2025-10-13","orderId":"2011410130058","vendor":"萬福 ONEFU","items":[{"name":"700胖瓶 100入","qty":100.0,"price":5.0,"unit":"斤"}],"total":500,"status":"paid","paidDate":"2025-10-13","payMethod":"","payNote":"","note":""},{"id":"152","date":"2025-10-14","orderId":"No.312618","vendor":"源山","items":[{"name":"本薄荷","qty":2.0,"price":130.0,"unit":"斤"},{"name":"本魚腥草","qty":3.0,"price":140.0,"unit":"斤"}],"total":680,"status":"paid","paidDate":"2025-10-14","payMethod":"","payNote":"","note":"現金付清"},{"id":"181","date":"2025-10-20","orderId":"","vendor":"富泰(中街)","items":[{"name":"台灣杭菊","qty":4.0,"price":1550.0,"unit":"斤"}],"total":6200,"status":"paid","paidDate":"2025-10-20","payMethod":"","payNote":"","note":""},{"id":"182","date":"2025-10-20","orderId":"","vendor":"陳德興","items":[{"name":"梅肉乾","qty":5.0,"price":400.0,"unit":"斤"}],"total":2000,"status":"paid","paidDate":"2025-10-20","payMethod":"","payNote":"","note":""},{"id":"29","date":"2025-10-23","orderId":"43469","vendor":"廣生堂","items":[{"name":"粗4號泡","qty":6.0,"price":46000.0,"unit":"斤"}],"total":276000,"status":"paid","paidDate":"2025-10-23","payMethod":"","payNote":"","note":"惟元小長"},{"id":"75","date":"2025-10-29","orderId":"9600","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運費","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-10-29","payMethod":"","payNote":"","note":"11月結"},{"id":"30","date":"2025-11-03","orderId":"43476","vendor":"廣生堂","items":[{"name":"美國中尖","qty":30.0,"price":1900.0,"unit":"斤"}],"total":57000,"status":"paid","paidDate":"2025-11-03","payMethod":"","payNote":"","note":""},{"id":"102","date":"2025-11-03","orderId":"11411030036","vendor":"三興","items":[{"name":"熟地黃片一等","qty":2.0,"price":280.0,"unit":"斤"},{"name":"生酸棗仁","qty":1.0,"price":1450.0,"unit":"斤"},{"name":"甜百合","qty":3.0,"price":570.0,"unit":"斤"},{"name":"蜜野生丁甘草","qty":3.0,"price":320.0,"unit":"斤"},{"name":"肇慶欠實0.9","qty":10.0,"price":150.0,"unit":"斤"},{"name":"鐵棍淮山片","qty":10.0,"price":320.0,"unit":"斤"},{"name":"特烏梅260粒","qty":5.0,"price":180.0,"unit":"斤"},{"name":"野生大丁甘草片","qty":5.0,"price":330.0,"unit":"斤"}],"total":11930,"status":"paid","paidDate":"2025-11-03","payMethod":"","payNote":"","note":""},{"id":"183","date":"2025-11-03","orderId":"","vendor":"信惠","items":[{"name":"雪耳(大花)9K","qty":15.0,"price":210.0,"unit":"斤"}],"total":3150,"status":"paid","paidDate":"2025-11-03","payMethod":"","payNote":"","note":""},{"id":"31","date":"2025-11-05","orderId":"43478","vendor":"廣生堂","items":[{"name":"美國特尖","qty":100.0,"price":2400.0,"unit":"斤"},{"name":"加 大尖","qty":100.0,"price":1700.0,"unit":"斤"}],"total":467000,"status":"paid","paidDate":"2025-11-05","payMethod":"","payNote":"","note":""},{"id":"45","date":"2025-11-07","orderId":"136532","vendor":"和盛記","items":[{"name":"生機仙楂","qty":50.0,"price":70.0,"unit":"斤"},{"name":"大紅八角","qty":2.0,"price":230.0,"unit":"斤"}],"total":3960,"status":"paid","paidDate":"2025-11-07","payMethod":"","payNote":"","note":""},{"id":"185","date":"2025-11-12","orderId":"","vendor":"日曆","items":[{"name":"500本@165(未稅)","qty":500.0,"price":173.25,"unit":"斤"}],"total":86625,"status":"paid","paidDate":"2025-11-12","payMethod":"","payNote":"","note":"有發票"},{"id":"184","date":"2025-11-19","orderId":"","vendor":"瑋嘉","items":[{"name":"喉糖3種共15KG@370","qty":15.0,"price":370.0,"unit":"斤"}],"total":5550,"status":"paid","paidDate":"2025-11-19","payMethod":"","payNote":"","note":""},{"id":"76","date":"2025-12-01","orderId":"9752","vendor":"明(坤贊)","items":[{"name":"特炊芎","qty":60.0,"price":230.0,"unit":"斤"},{"name":"運費","qty":1.0,"price":130.0,"unit":"斤"}],"total":13930,"status":"paid","paidDate":"2025-12-01","payMethod":"","payNote":"","note":"指配"},{"id":"103","date":"2025-12-04","orderId":"11412040018","vendor":"三興","items":[{"name":"蜜製野生甘草片","qty":3.0,"price":320.0,"unit":"斤"},{"name":"肇慶欠實0.9","qty":10.0,"price":140.0,"unit":"斤"},{"name":"鐵棍淮山片","qty":10.0,"price":320.0,"unit":"斤"},{"name":"野生大丁甘草片","qty":3.0,"price":330.0,"unit":"斤"},{"name":"黃連片/特級盒1.1","qty":1.0,"price":1950.0,"unit":"斤"},{"name":"大葉骨碎補片","qty":1.0,"price":240.0,"unit":"斤"}],"total":8740,"status":"paid","paidDate":"2025-12-04","payMethod":"","payNote":"","note":""},{"id":"118","date":"2025-12-04","orderId":"No.054277","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":120.0,"unit":"斤"}],"total":16620,"status":"paid","paidDate":"2025-12-04","payMethod":"","payNote":"","note":""},{"id":"56","date":"2025-12-18","orderId":"No.003372","vendor":"界順","items":[{"name":"盒封模卷茯苓","qty":50.0,"price":170.0,"unit":"斤"}],"total":8500,"status":"paid","paidDate":"2025-12-18","payMethod":"","payNote":"","note":""},{"id":"104","date":"2025-12-18","orderId":"1412180005","vendor":"三興","items":[{"name":"生川酸棗仁","qty":1.0,"price":1350.0,"unit":"斤"},{"name":"熟地黃片/酒製(一等)","qty":5.0,"price":280.0,"unit":"斤"},{"name":"甜百合","qty":3.0,"price":570.0,"unit":"斤"},{"name":"鐵棍淮山片","qty":5.0,"price":320.0,"unit":"斤"}],"total":6060,"status":"paid","paidDate":"2025-12-18","payMethod":"","payNote":"","note":""},{"id":"187","date":"2025-12-18","orderId":"1141218003","vendor":"翌超有限公司","items":[{"name":"梅酒瓶","qty":48.0,"price":45.0,"unit":"斤"}],"total":2160,"status":"paid","paidDate":"2025-12-18","payMethod":"","payNote":"","note":""},{"id":"186","date":"2025-12-24","orderId":"","vendor":"富泰","items":[{"name":"台灣杭菊","qty":5.0,"price":1500.0,"unit":"斤"}],"total":7500,"status":"paid","paidDate":"2025-12-24","payMethod":"","payNote":"","note":""},{"id":"119","date":"2025-12-29","orderId":"No.054474","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":50.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":120.0,"unit":"斤"}],"total":16620,"status":"paid","paidDate":"2025-12-29","payMethod":"","payNote":"","note":""},{"id":"1","date":"2026-01-05","orderId":"9648","vendor":"利仁","items":[{"name":"酣睡2倍","qty":1.0,"price":970.0,"unit":"斤"},{"name":"紓壓2倍","qty":1.0,"price":1750.0,"unit":"斤"},{"name":"紓筋2倍","qty":1.0,"price":750.0,"unit":"斤"},{"name":"純杏仁粉","qty":1.0,"price":320.0,"unit":"斤"},{"name":"酒當歸片","qty":5.0,"price":750.0,"unit":"斤"},{"name":"炒麥芽","qty":2.0,"price":90.0,"unit":"斤"},{"name":"四製陳皮","qty":2.0,"price":250.0,"unit":"斤"},{"name":"桂尖片","qty":2.0,"price":55.0,"unit":"斤"},{"name":"鎖陽","qty":1.0,"price":560.0,"unit":"斤"},{"name":"生附子","qty":0.25,"price":560.0,"unit":"斤"}],"total":9030,"status":"paid","paidDate":"2026-01-05","payMethod":"","payNote":"","note":""},{"id":"105","date":"2026-01-05","orderId":"11501050040","vendor":"三興","items":[{"name":"福建澤瀉片","qty":1.0,"price":230.0,"unit":"斤"},{"name":"熟地黃","qty":3.0,"price":280.0,"unit":"斤"},{"name":"野生大丁甘草","qty":5.0,"price":330.0,"unit":"斤"},{"name":"鐵棍淮山","qty":10.0,"price":320.0,"unit":"斤"},{"name":"肇慶芡實","qty":10.0,"price":140.0,"unit":"斤"},{"name":"蜜製野生丁甘草片","qty":2.0,"price":320.0,"unit":"斤"},{"name":"生地黃片","qty":1.0,"price":250.0,"unit":"斤"}],"total":8210,"status":"paid","paidDate":"2026-01-05","payMethod":"","payNote":"","note":""},{"id":"136","date":"2026-01-05","orderId":"M23738","vendor":"銓崧","items":[{"name":"天麻片","qty":10.0,"price":980.0,"unit":"斤"},{"name":"決明子","qty":5.0,"price":70.0,"unit":"斤"},{"name":"薏苡仁","qty":10.0,"price":65.0,"unit":"斤"},{"name":"丹蔘片","qty":5.0,"price":345.0,"unit":"斤"},{"name":"何首烏","qty":3.0,"price":405.0,"unit":"斤"}],"total":13740,"status":"paid","paidDate":"2026-01-05","payMethod":"","payNote":"","note":""},{"id":"2","date":"2026-01-06","orderId":"9652","vendor":"利仁","items":[{"name":"獨活寄生湯","qty":1.0,"price":406.0,"unit":"斤"}],"total":406,"status":"paid","paidDate":"2026-01-06","payMethod":"","payNote":"","note":""},{"id":"3","date":"2026-01-07","orderId":"9654","vendor":"利仁","items":[{"name":"虎杖","qty":10.0,"price":120.0,"unit":"斤"},{"name":"研工","qty":1.0,"price":500.0,"unit":"斤"}],"total":1700,"status":"paid","paidDate":"2026-01-07","payMethod":"","payNote":"","note":""},{"id":"4","date":"2026-01-08","orderId":"9659","vendor":"利仁","items":[{"name":"紫草根","qty":0.25,"price":360.0,"unit":"斤"}],"total":90,"status":"paid","paidDate":"2026-01-08","payMethod":"","payNote":"","note":""},{"id":"188","date":"2026-01-09","orderId":"10574","vendor":"瑋嘉","items":[{"name":"糖果","qty":15.0,"price":350.0,"unit":"斤"}],"total":5250,"status":"paid","paidDate":"2026-01-09","payMethod":"","payNote":"","note":""},{"id":"5","date":"2026-01-12","orderId":"9669","vendor":"利仁","items":[{"name":"酒當歸片","qty":5.0,"price":750.0,"unit":"斤"},{"name":"炒白朮","qty":2.0,"price":260.0,"unit":"斤"},{"name":"圓餅","qty":3.0,"price":80.0,"unit":"斤"},{"name":"黑胡椒末","qty":1.0,"price":360.0,"unit":"斤"},{"name":"桂尖片","qty":2.0,"price":55.0,"unit":"斤"}],"total":4980,"status":"paid","paidDate":"2026-01-12","payMethod":"","payNote":"","note":""},{"id":"6","date":"2026-01-14","orderId":"9677","vendor":"利仁","items":[{"name":"袪濕2倍","qty":1.0,"price":1450.0,"unit":"斤"},{"name":"紓筋2倍","qty":1.0,"price":750.0,"unit":"斤"},{"name":"研工","qty":2.0,"price":225.0,"unit":"斤"},{"name":"粉玫瑰花","qty":1.0,"price":650.0,"unit":"斤"},{"name":"製半夏","qty":1.0,"price":560.0,"unit":"斤"},{"name":"浙貝片","qty":1.0,"price":550.0,"unit":"斤"},{"name":"茯神","qty":1.0,"price":320.0,"unit":"斤"},{"name":"製遠志","qty":1.0,"price":1400.0,"unit":"斤"}],"total":6130,"status":"paid","paidDate":"2026-01-14","payMethod":"","payNote":"","note":""},{"id":"120","date":"2026-01-14","orderId":"No.054645","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":35.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":120.0,"unit":"斤"}],"total":11670,"status":"paid","paidDate":"2026-01-14","payMethod":"","payNote":"","note":""},{"id":"106","date":"2026-01-15","orderId":"11501150003","vendor":"三興","items":[{"name":"特級金銀花(河南)","qty":2.0,"price":400.0,"unit":"斤"},{"name":"生地黃片","qty":1.0,"price":250.0,"unit":"斤"},{"name":"散貢羅漢果","qty":50.0,"price":13.0,"unit":"斤"},{"name":"生川酸棗仁","qty":3.0,"price":1400.0,"unit":"斤"},{"name":"熟地黃片","qty":2.0,"price":280.0,"unit":"斤"},{"name":"王不留行子","qty":2.0,"price":110.0,"unit":"斤"}],"total":6680,"status":"paid","paidDate":"2026-01-15","payMethod":"","payNote":"","note":""},{"id":"7","date":"2026-01-16","orderId":"9682","vendor":"利仁","items":[{"name":"乾薑片","qty":1.0,"price":80.0,"unit":"斤"},{"name":"柴胡片","qty":1.0,"price":540.0,"unit":"斤"},{"name":"打碎工","qty":2.0,"price":150.0,"unit":"斤"},{"name":"赤角","qty":10.0,"price":80.0,"unit":"斤"},{"name":"白胡椒粒","qty":1.0,"price":300.0,"unit":"斤"},{"name":"黑胡椒粒","qty":1.0,"price":270.0,"unit":"斤"}],"total":2290,"status":"paid","paidDate":"2026-01-16","payMethod":"","payNote":"","note":""},{"id":"139","date":"2026-01-16","orderId":"50116010","vendor":"鴻龍","items":[{"name":"2A霍山石斛(半斤裝)","qty":3.0,"price":2500.0,"unit":"斤"},{"name":"2A霍山石斛(半斤裝)","qty":3.0,"price":2500.0,"unit":"斤"}],"total":15000,"status":"paid","paidDate":"2026-01-16","payMethod":"","payNote":"","note":"3/3對扣帳"},{"id":"107","date":"2026-01-19","orderId":"11501190071","vendor":"三興","items":[{"name":"玉竹片","qty":1.0,"price":400.0,"unit":"斤"}],"total":400,"status":"paid","paidDate":"2026-01-19","payMethod":"","payNote":"","note":""},{"id":"140","date":"2026-01-19","orderId":"50119001","vendor":"鴻龍","items":[{"name":"切蔘一斤裝2018Y","qty":10.0,"price":9000.0,"unit":"斤"},{"name":"切蔘一斤裝2018Y","qty":10.0,"price":9000.0,"unit":"斤"}],"total":180000,"status":"paid","paidDate":"2026-01-19","payMethod":"","payNote":"","note":"3/3對扣帳"},{"id":"189","date":"2026-01-19","orderId":"4508","vendor":"南興","items":[{"name":"七子白肥皂","qty":15.0,"price":135.0,"unit":"斤"}],"total":2025,"status":"paid","paidDate":"2026-01-19","payMethod":"","payNote":"","note":""},{"id":"8","date":"2026-01-22","orderId":"9691","vendor":"利仁","items":[{"name":"研工(2斤+)","qty":1.0,"price":225.0,"unit":"斤"},{"name":"研工(10斤)","qty":1.0,"price":450.0,"unit":"斤"},{"name":"酒當歸片","qty":3.0,"price":750.0,"unit":"斤"},{"name":"牛蒡片","qty":1.0,"price":340.0,"unit":"斤"},{"name":"圓餅","qty":5.0,"price":80.0,"unit":"斤"},{"name":"九層塔頭","qty":0.5,"price":90.0,"unit":"斤"},{"name":"酒歸尾片","qty":2.0,"price":400.0,"unit":"斤"},{"name":"赤角","qty":10.0,"price":80.0,"unit":"斤"},{"name":"蚶殼草","qty":0.5,"price":180.0,"unit":"斤"}],"total":5400,"status":"paid","paidDate":"2026-01-22","payMethod":"","payNote":"","note":""},{"id":"32","date":"2026-01-22","orderId":"49174","vendor":"廣生堂","items":[{"name":"美國統比","qty":60.0,"price":1250.0,"unit":"斤"}],"total":75000,"status":"paid","paidDate":"2026-01-22","payMethod":"","payNote":"","note":"附發票"},{"id":"137","date":"2026-01-22","orderId":"M25154","vendor":"銓崧","items":[{"name":"杜仲片(黑)2mm","qty":5.0,"price":240.0,"unit":"斤"},{"name":"玉竹片(津)一級","qty":5.0,"price":455.0,"unit":"斤"},{"name":"麥門冬(川)一級","qty":5.0,"price":520.0,"unit":"斤"},{"name":"黃精片(蜜製)","qty":2.0,"price":520.0,"unit":"斤"}],"total":7115,"status":"paid","paidDate":"2026-01-22","payMethod":"","payNote":"","note":""},{"id":"191","date":"2026-01-27","orderId":"1150127031","vendor":"台灣多連嘉(清海化學工業)","items":[{"name":"乾燥劑","qty":3000.0,"price":1.68,"unit":"斤"}],"total":5040,"status":"paid","paidDate":"2026-01-27","payMethod":"","payNote":"","note":"有發票"},{"id":"9","date":"2026-01-28","orderId":"9704","vendor":"利仁","items":[{"name":"補骨脂","qty":1.0,"price":100.0,"unit":"斤"},{"name":"巴戟天","qty":0.5,"price":480.0,"unit":"斤"},{"name":"金錢草","qty":0.5,"price":200.0,"unit":"斤"},{"name":"炒白朮","qty":2.0,"price":260.0,"unit":"斤"},{"name":"石菖蒲片","qty":1.0,"price":400.0,"unit":"斤"},{"name":"桂尖片","qty":2.0,"price":55.0,"unit":"斤"},{"name":"薑黃散(勝昌)","qty":2.0,"price":270.0,"unit":"斤"},{"name":"酣睡2倍","qty":1.0,"price":970.0,"unit":"斤"},{"name":"紓壓2倍","qty":1.0,"price":1750.0,"unit":"斤"}],"total":4730,"status":"paid","paidDate":"2026-01-28","payMethod":"","payNote":"","note":""},{"id":"10","date":"2026-01-29","orderId":"9705","vendor":"利仁","items":[{"name":"禹白附","qty":0.125,"price":320.0,"unit":"斤"},{"name":"生白朮","qty":0.125,"price":280.0,"unit":"斤"},{"name":"打碎工","qty":3.0,"price":150.0,"unit":"斤"}],"total":525,"status":"paid","paidDate":"2026-01-29","payMethod":"","payNote":"","note":""},{"id":"108","date":"2026-01-29","orderId":"11501290026","vendor":"三興","items":[{"name":"黑桑葚子","qty":2.0,"price":170.0,"unit":"斤"},{"name":"熟地黃片","qty":3.0,"price":280.0,"unit":"斤"},{"name":"鐵棍淮山片","qty":5.0,"price":320.0,"unit":"斤"},{"name":"蜜至野生丁甘草片","qty":2.0,"price":320.0,"unit":"斤"}],"total":3420,"status":"paid","paidDate":"2026-01-29","payMethod":"","payNote":"","note":""},{"id":"190","date":"2026-01-29","orderId":"14655","vendor":"鑫榮興業有限公司","items":[{"name":"FS2012R","qty":42.0,"price":23.0,"unit":"斤"}],"total":966,"status":"paid","paidDate":"2026-01-29","payMethod":"","payNote":"","note":""},{"id":"11","date":"2026-02-02","orderId":"9716","vendor":"利仁","items":[{"name":"歸尾片","qty":42.0,"price":330.0,"unit":"斤"},{"name":"運費","qty":1.0,"price":120.0,"unit":"斤"},{"name":"紓筋2倍","qty":1.0,"price":750.0,"unit":"斤"},{"name":"袪濕2倍","qty":1.0,"price":1450.0,"unit":"斤"},{"name":"薑黃散(昌)","qty":5.0,"price":270.0,"unit":"斤"},{"name":"生白芍","qty":1.0,"price":360.0,"unit":"斤"},{"name":"桂子","qty":1.0,"price":330.0,"unit":"斤"}],"total":18220,"status":"paid","paidDate":"2026-02-02","payMethod":"","payNote":"","note":""},{"id":"57","date":"2026-02-02","orderId":"No.004465","vendor":"界順","items":[{"name":"散大紅棗片","qty":166.66,"price":75.0,"unit":"斤"}],"total":12500,"status":"paid","paidDate":"2026-02-02","payMethod":"","payNote":"","note":""},{"id":"121","date":"2026-02-03","orderId":"No.054825","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":35.0,"price":330.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":130.0,"unit":"斤"}],"total":11680,"status":"paid","paidDate":"2026-02-03","payMethod":"","payNote":"","note":""},{"id":"12","date":"2026-02-04","orderId":"9720","vendor":"利仁","items":[{"name":"小茴","qty":1.0,"price":75.0,"unit":"斤"},{"name":"防己","qty":0.25,"price":720.0,"unit":"斤"},{"name":"酒當歸片","qty":5.0,"price":750.0,"unit":"斤"},{"name":"麻黃","qty":0.5,"price":360.0,"unit":"斤"},{"name":"菟絲子","qty":1.0,"price":180.0,"unit":"斤"},{"name":"牡蠣","qty":1.0,"price":50.0,"unit":"斤"},{"name":"懷牛膝","qty":1.0,"price":300.0,"unit":"斤"},{"name":"桂尖片","qty":3.0,"price":55.0,"unit":"斤"}],"total":4700,"status":"paid","paidDate":"2026-02-04","payMethod":"","payNote":"","note":"退"},{"id":"13","date":"2026-02-04","orderId":"9721","vendor":"利仁","items":[{"name":"銀翹散","qty":1.0,"price":364.0,"unit":"斤"}],"total":364,"status":"paid","paidDate":"2026-02-04","payMethod":"","payNote":"","note":"$520"},{"id":"14","date":"2026-02-06","orderId":"9727","vendor":"利仁","items":[{"name":"研工(肉桂)","qty":1.0,"price":225.0,"unit":"斤"},{"name":"研工(巴參)","qty":1.0,"price":360.0,"unit":"斤"},{"name":"清火2倍","qty":1.0,"price":1050.0,"unit":"斤"},{"name":"草本1倍","qty":1.0,"price":530.0,"unit":"斤"}],"total":2165,"status":"paid","paidDate":"2026-02-06","payMethod":"","payNote":"","note":""},{"id":"15","date":"2026-02-09","orderId":"9731","vendor":"利仁","items":[{"name":"生硫磺","qty":0.25,"price":80.0,"unit":"斤"},{"name":"生附子","qty":0.25,"price":560.0,"unit":"斤"},{"name":"細辛","qty":0.5,"price":1700.0,"unit":"斤"},{"name":"神曲","qty":0.5,"price":500.0,"unit":"斤"},{"name":"山藥末","qty":1.0,"price":200.0,"unit":"斤"},{"name":"子袋 20個","qty":1.0,"price":30.0,"unit":"斤"}],"total":1490,"status":"paid","paidDate":"2026-02-09","payMethod":"","payNote":"","note":""},{"id":"16","date":"2026-02-11","orderId":"9739","vendor":"利仁","items":[{"name":"白胡椒末","qty":3.0,"price":380.0,"unit":"斤"},{"name":"柑蔘果","qty":1.0,"price":675.0,"unit":"斤"},{"name":"小青龍湯","qty":1.0,"price":385.0,"unit":"斤"},{"name":"紓壓5倍","qty":1.0,"price":4360.0,"unit":"斤"},{"name":"紓筋5倍","qty":1.0,"price":1800.0,"unit":"斤"}],"total":8360,"status":"paid","paidDate":"2026-02-11","payMethod":"","payNote":"","note":"5斤3兩"},{"id":"138","date":"2026-02-11","orderId":"M26689","vendor":"銓崧","items":[{"name":"丹蔘片(川)特級","qty":10.0,"price":345.0,"unit":"斤"},{"name":"麥門冬(川)特級","qty":15.0,"price":650.0,"unit":"斤"},{"name":"決明子","qty":5.0,"price":70.0,"unit":"斤"},{"name":"杜仲片(黑)2mm","qty":3.0,"price":240.0,"unit":"斤"}],"total":14270,"status":"paid","paidDate":"2026-02-11","payMethod":"","payNote":"","note":""},{"id":"17","date":"2026-02-12","orderId":"9741","vendor":"利仁","items":[{"name":"酣睡5倍","qty":1.0,"price":2380.0,"unit":"斤"},{"name":"袪濕5倍","qty":1.0,"price":3580.0,"unit":"斤"},{"name":"研工","qty":1.0,"price":225.0,"unit":"斤"}],"total":6185,"status":"paid","paidDate":"2026-02-12","payMethod":"","payNote":"","note":""},{"id":"18","date":"2026-02-14","orderId":"9742","vendor":"利仁","items":[{"name":"桂尖片","qty":2.0,"price":55.0,"unit":"斤"},{"name":"柏子仁","qty":0.25,"price":480.0,"unit":"斤"},{"name":"巴戟天","qty":0.5,"price":480.0,"unit":"斤"},{"name":"柴胡片","qty":1.0,"price":400.0,"unit":"斤"},{"name":"炮附子","qty":1.0,"price":400.0,"unit":"斤"},{"name":"銀翹碇(港)","qty":1.0,"price":416.0,"unit":"斤"},{"name":"黑胡椒粉","qty":1.0,"price":360.0,"unit":"斤"}],"total":2046,"status":"paid","paidDate":"2026-02-14","payMethod":"","payNote":"","note":""},{"id":"122","date":"2026-02-23","orderId":"No.054960","vendor":"仁記","items":[{"name":"北耆王瓜子","qty":35.0,"price":330.0,"unit":"斤"},{"name":"晉耆大棒瓜子","qty":1.0,"price":520.0,"unit":"斤"},{"name":"代付運費","qty":1.0,"price":130.0,"unit":"斤"}],"total":12200,"status":"paid","paidDate":"2026-02-23","payMethod":"","payNote":"","note":""},{"id":"192","date":"2026-02-23","orderId":"1150223019","vendor":"台灣多連嘉(清海化學工業)","items":[{"name":"脫氧劑","qty":3000.0,"price":1.2,"unit":"斤"}],"total":3780,"status":"paid","paidDate":"2026-02-23","payMethod":"","payNote":"","note":"有發票"},{"id":"19","date":"2026-02-25","orderId":"9749","vendor":"利仁","items":[{"name":"雞內金","qty":0.25,"price":480.0,"unit":"斤"},{"name":"藕節","qty":0.5,"price":180.0,"unit":"斤"},{"name":"酒當歸片","qty":5.0,"price":750.0,"unit":"斤"},{"name":"酒當歸尾","qty":2.0,"price":400.0,"unit":"斤"},{"name":"白芥子","qty":0.25,"price":120.0,"unit":"斤"},{"name":"柏子仁","qty":0.25,"price":480.0,"unit":"斤"},{"name":"佩蘭","qty":0.5,"price":140.0,"unit":"斤"},{"name":"夜交藤","qty":0.5,"price":100.0,"unit":"斤"}],"total":5030,"status":"paid","paidDate":"2026-02-25","payMethod":"","payNote":"","note":""},{"id":"20","date":"2026-02-25","orderId":"9750","vendor":"利仁","items":[{"name":"鬱金","qty":0.5,"price":340.0,"unit":"斤"},{"name":"柴胡片","qty":1.0,"price":400.0,"unit":"斤"},{"name":"小茴","qty":1.0,"price":75.0,"unit":"斤"},{"name":"炒白朮","qty":3.0,"price":260.0,"unit":"斤"},{"name":"草果","qty":0.5,"price":220.0,"unit":"斤"},{"name":"車前草","qty":0.125,"price":200.0,"unit":"斤"},{"name":"厚朴","qty":1.0,"price":120.0,"unit":"斤"},{"name":"老桂扎","qty":10.0,"price":350.0,"unit":"斤"}],"total":5180,"status":"paid","paidDate":"2026-02-25","payMethod":"","payNote":"","note":""},{"id":"46","date":"2026-02-25","orderId":"141939","vendor":"和盛記","items":[{"name":"正宗大紅袍花椒","qty":8.0,"price":550.0,"unit":"斤"},{"name":"管花肉蓯蓉","qty":3.0,"price":650.0,"unit":"斤"}],"total":6350,"status":"paid","paidDate":"2026-02-25","payMethod":"","payNote":"","note":""}];
+
+// ── 狀態 ──────────────────────────────────────────────
+// ── Supabase 設定（在下方填入您的金鑰）──────────────────
+const SUPABASE_URL = 'https://lkryumerfbqfwfyxegve.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrcnl1bWVyZmJxZndmeXhlZ3ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQxMDgsImV4cCI6MjA4OTIwMDEwOH0.AA0aqoYqln4e-uoMoqQpk_BfqexA6ncHOLi9SDOne34';
+
+let orders = [];
+let itemCount = 0;
+let pendingPaidId = null;
+let supabaseReady = false;
+
+// ── Supabase API 呼叫輔助 ──────────────────────────────
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ── 載入訂單（從 Supabase 讀取）──────────────────────
+async function loadOrders() {
+  setSyncStatus('syncing', '載入中…');
+  try {
+    // 先讀訂單主表
+    const ordersData = await sbFetch('orders?select=*&order=date.asc');
+    // 再讀品項
+    const itemsData = await sbFetch('order_items?select=*&order=sort_order.asc');
+
+    // 組合
+    const itemMap = {};
+    itemsData.forEach(i => {
+      if (!itemMap[i.order_id]) itemMap[i.order_id] = [];
+      itemMap[i.order_id].push({ name: i.name, qty: i.qty, price: i.price, unit: i.unit || '斤' });
+    });
+
+    orders = ordersData.map(o => ({
+      id: o.id,
+      date: o.date,
+      orderId: o.order_id,
+      vendor: o.vendor,
+      items: itemMap[o.id] || [],
+      total: Number(o.total),
+      status: o.status,
+      paidDate: o.paid_date || '',
+      payMethod: o.pay_method || '',
+      payNote: o.pay_note || '',
+      note: o.note || '',
+      type: o.type || '',
+      refundOf: o.refund_of || ''
+    }));
+
+    if (orders.length === 0) {
+      // 首次使用：匯入歷史資料
+      setSyncStatus('syncing', '首次匯入歷史資料…');
+      await importHistory();
+    } else {
+      setSyncStatus('synced', `已同步 ${orders.length} 筆`);
+    }
+    supabaseReady = true;
+  } catch (e) {
+    console.error('Supabase 載入失敗，改用本地資料:', e);
+    setSyncStatus('error', '離線模式');
+    // 降級到 localStorage
+    const saved = localStorage.getItem('weiyuan_orders_v1');
+    orders = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(HISTORY));
+    supabaseReady = false;
+  }
+  renderOrders();
+  renderSummary();
+}
+
+async function importHistory() {
+  const hist = JSON.parse(JSON.stringify(HISTORY));
+  for (const o of hist) {
+    await insertOrder(o);
+  }
+  orders = hist;
+  setSyncStatus('synced', `已匯入 ${hist.length} 筆歷史資料`);
+}
+
+// ── 新增一筆訂單到 Supabase ───────────────────────────
+async function insertOrder(o) {
+  await sbFetch('orders', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      id: o.id,
+      date: o.date,
+      order_id: o.orderId || '',
+      vendor: o.vendor,
+      total: o.total,
+      status: o.status,
+      paid_date: o.paidDate || '',
+      pay_method: o.payMethod || '',
+      pay_note: o.payNote || '',
+      note: o.note || '',
+      type: o.type || '',
+      refund_of: o.refundOf || ''
+    })
+  });
+  if (o.items && o.items.length > 0) {
+    await sbFetch('order_items', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify(o.items.map((item, idx) => ({
+        order_id: o.id,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        unit: item.unit || '斤',
+        sort_order: idx
+      })))
+    });
+  }
+}
+
+// ── 更新一筆訂單 ──────────────────────────────────────
+async function updateOrder(o) {
+  await sbFetch('orders?id=eq.' + o.id, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      date: o.date,
+      order_id: o.orderId || '',
+      vendor: o.vendor,
+      total: o.total,
+      status: o.status,
+      paid_date: o.paidDate || '',
+      pay_method: o.payMethod || '',
+      pay_note: o.payNote || '',
+      note: o.note || '',
+      type: o.type || '',
+      refund_of: o.refundOf || ''
+    })
+  });
+  // 刪舊品項再重建
+  await sbFetch('order_items?order_id=eq.' + o.id, { method: 'DELETE', prefer: 'return=minimal' });
+  if (o.items && o.items.length > 0) {
+    await sbFetch('order_items', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify(o.items.map((item, idx) => ({
+        order_id: o.id,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        unit: item.unit || '斤',
+        sort_order: idx
+      })))
+    });
+  }
+}
+
+// ── 刪除一筆訂單 ──────────────────────────────────────
+async function deleteFromDB(id) {
+  await sbFetch('order_items?order_id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
+  await sbFetch('orders?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
+}
+
+// ── persist（寫入 Supabase 或降級 localStorage）────────
+async function persist(changedOrder, action) {
+  if (!supabaseReady) {
+    localStorage.setItem('weiyuan_orders_v1', JSON.stringify(orders));
+    return;
+  }
+  setSyncStatus('syncing', '儲存中…');
+  try {
+    if (action === 'insert') await insertOrder(changedOrder);
+    else if (action === 'update') await updateOrder(changedOrder);
+    else if (action === 'delete') await deleteFromDB(changedOrder);
+    setSyncStatus('synced', `已同步`);
+  } catch(e) {
+    setSyncStatus('error', '同步失敗，請重試');
+    console.error(e);
+    throw e;
+  }
+}
+
+// ── 同步狀態指示 ──────────────────────────────────────
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-text');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + state;
+  label.textContent = text;
+}
+
+function allOrders() { return orders; }
+
+// ── 工具 ──────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-' + t).classList.add('active');
+  if (t === 'orders') { renderOrders(); renderSummary(); }
+  if (t === 'add') initForm();
+  if (t === 'vendors') renderVendors();
+  if (t === 'price') initPriceSearch();
+}
+
+// ── 摘要卡片 ──────────────────────────────────────────
+function renderSummary() {
+  const ym = new Date().toISOString().slice(0, 7);
+  const mo = orders.filter(o => o.date.startsWith(ym));
+  const mTotal = mo.reduce((s, o) => s + o.total, 0);
+  const unpaid = orders.filter(o => o.status === 'pending').reduce((s, o) => s + o.total, 0);
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="metric"><div class="metric-label">本月訂單數</div><div class="metric-value">${mo.length}</div></div>
+    <div class="metric"><div class="metric-label">本月進貨金額</div><div class="metric-value">$${mTotal.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">累計未付款</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>`;
+}
+
+// ── 訂單列表 ──────────────────────────────────────────
+function renderOrders() {
+  renderSummary();
+  const fm = document.getElementById('filter-month').value;
+  const fv = document.getElementById('filter-vendor').value.toLowerCase();
+  const fo = document.getElementById('filter-orderid').value.toLowerCase();
+  const fi = document.getElementById('filter-item').value.toLowerCase();
+  const fs = document.getElementById('filter-status').value;
+  let list = orders.filter(o => {
+    if (fm && !o.date.startsWith(fm)) return false;
+    if (fv && !o.vendor.toLowerCase().includes(fv)) return false;
+    if (fo && !(o.orderId||'').toLowerCase().includes(fo)) return false;
+    if (fi && !o.items.some(i => i.name.toLowerCase().includes(fi))) return false;
+    if (fs && o.status !== fs) return false;
+    return true;
+  }).sort((a, b) => b.date.localeCompare(a.date));
+  const tb = document.getElementById('orders-tbody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">沒有符合的訂單</td></tr>'; return; }
+  tb.innerHTML = list.map(o => {
+    const itemSummary = o.items.length === 1
+      ? `${o.items[0].name}　${o.items[0].qty} ${o.items[0].unit||'斤'}`
+      : `${o.items[0].name} 等 ${o.items.length} 項`;
+    return `<tr class="order-row" onclick="showDetail('${o.id}')" title="點擊查看詳情">
+      <td>${o.date}</td>
+      <td class="mono">${o.orderId||'—'}</td>
+      <td style="font-weight:500;">${o.vendor}</td>
+      <td>
+        <span>${itemSummary}</span>
+        ${o.items.length>1?`<span style="font-size:11px;color:var(--blue);margin-left:6px;">▶ ${o.items.length} 項</span>`:''}
+        ${o.note?`<span style="font-size:11px;color:var(--text3);margin-left:6px;">📝</span>`:''}
+      </td>
+      <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+      <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
+      <td style="color:var(--text3);font-size:12px;">${o.paidDate||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function clearFilters() {
+  ['filter-month','filter-vendor','filter-orderid','filter-item'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('filter-status').value = '';
+  renderOrders();
+}
+
+// ── 付款 Modal ────────────────────────────────────────
+function openModal(id) {
+  pendingPaidId = id;
+  document.getElementById('modal-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal-bg').style.display = 'none'; pendingPaidId = null; }
+function confirmPaid() {
+  const d = document.getElementById('modal-date').value;
+  if (!d) { alert('請選擇付款日期'); return; }
+  const o = orders.find(x => x.id === pendingPaidId);
+  if (o) { o.status = 'paid'; o.paidDate = d; await persist(o, 'update'); renderOrders(); toast('✓ 已標記為付款'); }
+  closeModal();
+}
+document.getElementById('modal-bg').addEventListener('click', e => { if (e.target === document.getElementById('modal-bg')) closeModal(); });
+
+// ── 訂單詳情 ──────────────────────────────────────────
+let currentDetailId = null;
+
+function showDetail(id) {
+  currentDetailId = id;
+  renderDetail(id, false);
+  document.getElementById('detail-modal-bg').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal-bg').style.display = 'none';
+  currentDetailId = null;
+}
+
+function renderDetail(id, editMode) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+
+  if (editMode) {
+    renderEditDetail(o);
+    return;
+  }
+
+  // ── 檢視模式 ──
+  const isRefund = o.type === 'refund';
+  const itemRows = o.items.map(i => `
+    <tr>
+      <td style="font-weight:500;">${i.name}</td>
+      <td style="text-align:right;">${i.qty} ${i.unit||'斤'}</td>
+      <td style="text-align:right;">$${i.price.toLocaleString()}</td>
+      <td style="text-align:right;font-weight:600;${isRefund?'color:var(--red);':''}">
+        ${isRefund?'－':''}$${Math.round(i.qty*i.price).toLocaleString()}
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <h3>${o.vendor}</h3>
+          ${isRefund?'<span class="refund-badge">↩ 退換貨</span>':''}
+        </div>
+        <div style="font-size:13px;color:var(--text2);">${o.date}　<span class="mono" style="font-size:12px;">${o.orderId||'—'}</span></div>
+      </div>
+      <div class="kebab-wrap">
+        <button class="kebab-btn" onclick="toggleKebab(event)">···</button>
+        <div class="kebab-menu" id="kebab-menu">
+          <button class="kebab-item" onclick="renderDetail('${id}', true);closeKebab()">✏️　編輯訂單</button>
+          <div class="kebab-sep"></div>
+          <button class="kebab-item" onclick="createRefund('${id}');closeKebab()">↩　建立退換貨</button>
+          <div class="kebab-sep"></div>
+          <button class="kebab-item danger" onclick="deleteOrderFromDetail('${id}')">🗑　刪除此訂單</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-meta">
+      <div class="detail-meta-item"><div class="detail-meta-label">付款狀態</div><div class="detail-meta-value"><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></div></div>
+      ${o.paidDate?`<div class="detail-meta-item"><div class="detail-meta-label">付款日期</div><div class="detail-meta-value">${o.paidDate}</div></div>`:''}
+      ${o.payMethod?`<div class="detail-meta-item"><div class="detail-meta-label">付款方式</div><div class="detail-meta-value">${o.payMethod}</div></div>`:''}
+      ${o.payNote?`<div class="detail-meta-item"><div class="detail-meta-label">付款備註</div><div class="detail-meta-value">${o.payNote}</div></div>`:''}
+      ${o.note?`<div class="detail-meta-item" style="grid-column:1/-1;"><div class="detail-meta-label">訂單備註</div><div class="detail-meta-value">${o.note}</div></div>`:''}
+    </div>
+    <table class="detail-items-table">
+      <thead><tr><th>商品名稱</th><th style="text-align:right;">數量</th><th style="text-align:right;">單價</th><th style="text-align:right;">小計</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <div class="detail-total">
+      <span style="font-size:13px;color:var(--text2);">${isRefund?'退款金額':'訂單總金額'}</span>
+      <span style="font-size:22px;font-weight:600;letter-spacing:-.02em;${isRefund?'color:var(--red);':''}">
+        ${isRefund?'－':''}$${o.total.toLocaleString()}
+      </span>
+    </div>`;
+
+  document.getElementById('detail-actions').innerHTML = `
+    <button class="btn" onclick="closeDetail()">關閉</button>
+    ${o.status==='pending'?`<button class="btn btn-success" onclick="closeDetail();openModal('${id}')">標記付款</button>`:''}`;
+}
+
+function renderEditDetail(o) {
+  const unitOpts = ['斤','公斤','兩','個','包','罐','盒'].map(u =>
+    `<option value="${u}" ${(o.items[0]?.unit||'斤')===u?'':''}>${u}</option>`).join('');
+
+  const itemsHtml = o.items.map((item, idx) => `
+    <div class="edit-item-row" id="edit-item-${idx}">
+      <input type="text" value="${item.name}" id="ename-${idx}" oninput="recalcEdit()">
+      <input type="number" value="${item.price}" id="eprice-${idx}" min="0" oninput="recalcEdit()">
+      <input type="number" value="${item.qty}" id="eqty-${idx}" min="0" step="0.01" oninput="recalcEdit()">
+      <select id="eunit-${idx}">${['斤','公斤','兩','個','包','罐','盒'].map(u=>`<option ${(item.unit||'斤')===u?'selected':''}>${u}</option>`).join('')}</select>
+      <input type="text" id="esub-${idx}" readonly value="$${Math.round(item.qty*item.price).toLocaleString()}" style="background:var(--surface2);color:var(--text2);">
+      <button class="remove-btn" onclick="removeEditItem(${idx})">✕</button>
+    </div>`).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header" style="margin-bottom:1rem;">
+      <h3 style="font-size:15px;">編輯訂單</h3>
+      <button class="btn btn-sm btn-ghost" onclick="renderDetail('${o.id}',false)">✕ 取消</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem;">
+      <div class="form-group"><label>日期</label><input type="date" id="e-date" value="${o.date}"></div>
+      <div class="form-group"><label>訂單編號</label><input type="text" id="e-orderid" value="${o.orderId||''}"></div>
+      <div class="form-group"><label>廠商</label><input type="text" id="e-vendor" value="${o.vendor}" list="vendor-list"></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">商品明細</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 28px;gap:6px;margin-bottom:5px;">
+      ${['商品名稱','單價','數量','單位','小計',''].map(h=>`<span style="font-size:11px;color:var(--text3);">${h}</span>`).join('')}
+    </div>
+    <div id="edit-items-container">${itemsHtml}</div>
+    <button class="btn btn-sm" onclick="addEditItemRow()" style="margin:6px 0 1rem;">+ 新增品項</button>
+    <div style="height:1px;background:var(--border);margin-bottom:1rem;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;">
+      <div class="form-group"><label>付款狀態</label>
+        <select id="e-status">
+          <option value="pending" ${o.status==='pending'?'selected':''}>未付款</option>
+          <option value="paid" ${o.status==='paid'?'selected':''}>已付款</option>
+        </select>
+      </div>
+      <div class="form-group"><label>付款日期</label><input type="date" id="e-paiddate" value="${o.paidDate||''}"></div>
+      <div class="form-group"><label>付款方式</label>
+        <select id="e-paymethod">
+          <option value="">—</option>
+          ${['現金','支票','匯款','月結','信用卡','貨到付款'].map(m=>`<option ${o.payMethod===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>付款備註</label><input type="text" id="e-paynote" value="${o.payNote||''}"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;"><label>訂單備註</label>
+      <textarea id="e-note" style="height:70px;resize:vertical;">${o.note||''}</textarea>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:13px;color:var(--text2);">訂單總金額：<strong id="edit-total">$${o.total.toLocaleString()}</strong></div>
+    </div>`;
+
+  document.getElementById('detail-actions').innerHTML = `
+    <button class="btn" onclick="renderDetail('${o.id}',false)">取消</button>
+    <button class="btn btn-primary" onclick="saveEdit('${o.id}')">儲存變更</button>`;
+
+  // 存一份品項供 addEditItemRow 使用
+  window._editItems = JSON.parse(JSON.stringify(o.items));
+}
+
+let editItemCount = 0;
+function addEditItemRow() {
+  editItemCount++;
+  const idx = 'new' + editItemCount;
+  const div = document.createElement('div');
+  div.className = 'edit-item-row'; div.id = 'edit-item-' + idx;
+  div.innerHTML = `
+    <input type="text" placeholder="商品名稱" id="ename-${idx}" oninput="recalcEdit()">
+    <input type="number" placeholder="0" id="eprice-${idx}" min="0" oninput="recalcEdit()">
+    <input type="number" placeholder="1" id="eqty-${idx}" min="0" step="0.01" value="1" oninput="recalcEdit()">
+    <select id="eunit-${idx}">${['斤','公斤','兩','個','包','罐','盒'].map(u=>`<option>${u}</option>`).join('')}</select>
+    <input type="text" id="esub-${idx}" readonly placeholder="—" style="background:var(--surface2);color:var(--text2);">
+    <button class="remove-btn" onclick="removeEditItem('${idx}')">✕</button>`;
+  document.getElementById('edit-items-container').appendChild(div);
+}
+
+function removeEditItem(idx) {
+  const el = document.getElementById('edit-item-' + idx);
+  if (el) el.remove();
+  recalcEdit();
+}
+
+function recalcEdit() {
+  let total = 0;
+  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(row => {
+    const idx = row.id.replace('edit-item-','');
+    const p = parseFloat(document.getElementById('eprice-'+idx)?.value)||0;
+    const q = parseFloat(document.getElementById('eqty-'+idx)?.value)||0;
+    const sub = p * q;
+    const subEl = document.getElementById('esub-'+idx);
+    if (subEl) subEl.value = sub > 0 ? '$'+Math.round(sub).toLocaleString() : '';
+    total += sub;
+  });
+  const el = document.getElementById('edit-total');
+  if (el) el.textContent = '$' + Math.round(total).toLocaleString();
+}
+
+async function saveEdit(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const items = [];
+  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(row => {
+    const idx = row.id.replace('edit-item-','');
+    const name = document.getElementById('ename-'+idx)?.value.trim();
+    const price = parseFloat(document.getElementById('eprice-'+idx)?.value)||0;
+    const qty = parseFloat(document.getElementById('eqty-'+idx)?.value)||0;
+    const unit = document.getElementById('eunit-'+idx)?.value||'斤';
+    if (name) items.push({name, price, qty, unit});
+  });
+  if (!items.length) { alert('請至少保留一個品項'); return; }
+  o.date = document.getElementById('e-date').value;
+  o.orderId = document.getElementById('e-orderid').value.trim();
+  o.vendor = document.getElementById('e-vendor').value.trim();
+  o.items = items;
+  o.total = Math.round(items.reduce((s,i) => s+i.price*i.qty, 0));
+  o.status = document.getElementById('e-status').value;
+  o.paidDate = document.getElementById('e-paiddate').value;
+  o.payMethod = document.getElementById('e-paymethod').value;
+  o.payNote = document.getElementById('e-paynote').value;
+  o.note = document.getElementById('e-note').value;
+  await persist(o, 'update');
+  renderOrders();
+  toast('✓ 訂單已更新');
+  renderDetail(id, false);
+}
+
+async function createRefund(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  if (!confirm(`要為「${o.vendor}／${o.orderId||o.date}」建立退換貨記錄嗎？\n\n系統會複製此訂單並標記為退換貨，您可以在編輯模式修改退貨品項與數量。`)) return;
+  const refund = {
+    ...JSON.parse(JSON.stringify(o)),
+    id: Date.now().toString(),
+    type: 'refund',
+    refundOf: id,
+    status: 'paid',
+    paidDate: new Date().toISOString().slice(0,10),
+    note: `退換貨（原訂單：${o.orderId||o.date}）${o.note?'　'+o.note:''}`,
+  };
+  orders.push(refund);
+  await persist(refund, 'insert');
+  closeDetail();
+  renderOrders();
+  toast('↩ 退換貨記錄已建立，請點擊查看並修改品項');
+  setTimeout(() => showDetail(refund.id), 300);
+}
+
+async function deleteOrderFromDetail(id) {
+  if (!confirm('確定刪除此訂單？此動作無法復原。')) return;
+  orders = orders.filter(x => x.id !== id);
+  await persist(id, 'delete');
+  closeDetail();
+  renderOrders();
+  toast('訂單已刪除');
+}
+
+function toggleKebab(e) {
+  e.stopPropagation();
+  document.getElementById('kebab-menu').classList.toggle('open');
+}
+function closeKebab() {
+  const m = document.getElementById('kebab-menu');
+  if (m) m.classList.remove('open');
+}
+document.addEventListener('click', () => closeKebab());
+
+// ── 刪除 ──────────────────────────────────────────────
+async function deleteOrder(id) {
+  if (!confirm('確定刪除此訂單？此動作無法復原。')) return;
+  orders = orders.filter(x => x.id !== id);
+  await persist(id, 'delete'); renderOrders(); toast('訂單已刪除');
+}
+
+// ── 新增訂單 ──────────────────────────────────────────
+function updateVendorList() {
+  const vendors = [...new Set(orders.map(o => o.vendor))].sort();
+  const dl = document.getElementById('vendor-list');
+  if (dl) dl.innerHTML = vendors.map(v => `<option value="${v}">`).join('');
+}
+
+function initForm() {
+  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  ['f-orderid','f-vendor','f-note','f-pay-note'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const paidCb = document.getElementById('f-paid');
+  if (paidCb) { paidCb.checked = false; }
+  document.getElementById('paid-fields').style.display = 'none';
+  document.getElementById('f-paid-date').value = new Date().toISOString().slice(0, 10);
+  document.querySelectorAll('.pay-chip').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('input[name=paymethod]').forEach(el => el.checked = false);
+  document.getElementById('items-container').innerHTML = '';
+  document.getElementById('order-total').textContent = '$0';
+  document.getElementById('save-msg').textContent = '';
+  itemCount = 0; addItemRow(); updateVendorList();
+}
+
+function togglePaidFields() {
+  const checked = document.getElementById('f-paid').checked;
+  document.getElementById('paid-fields').style.display = checked ? 'flex' : 'none';
+  if (checked && !document.getElementById('f-paid-date').value) {
+    document.getElementById('f-paid-date').value = new Date().toISOString().slice(0, 10);
+  }
+}
+
+// 付款方式選片點擊
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.pay-chip');
+  if (!chip) return;
+  document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  chip.querySelector('input').checked = true;
+});
+
+function addItemRow() {
+  itemCount++;
+  const id = itemCount;
+  const div = document.createElement('div');
+  div.className = 'item-row'; div.id = 'item-' + id;
+  div.innerHTML = `
+    <div>
+      <input type="text" placeholder="商品名稱" id="iname-${id}" oninput="calcTotal();showPriceHint(${id})" onblur="showPriceHint(${id})">
+      <div class="price-hint" id="phint-${id}"></div>
+    </div>
+    <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotal()">
+    <input type="number" placeholder="1" id="iqty-${id}" min="0" step="0.01" value="1" oninput="calcTotal()">
+    <select id="iunit-${id}">
+      <option value="斤">斤</option>
+      <option value="公斤">公斤</option>
+      <option value="兩">兩</option>
+      <option value="個">個</option>
+      <option value="包">包</option>
+      <option value="罐">罐</option>
+      <option value="盒">盒</option>
+    </select>
+    <input type="text" id="isub-${id}" readonly placeholder="—">
+    <button class="remove-btn" onclick="removeItem(${id})" style="margin-top:2px;">✕</button>`;
+  document.getElementById('items-container').appendChild(div);
+}
+
+function showPriceHint(id) {
+  const nameEl = document.getElementById('iname-'+id);
+  const hintEl = document.getElementById('phint-'+id);
+  const priceEl = document.getElementById('iprice-'+id);
+  if (!nameEl || !hintEl) return;
+  const q = nameEl.value.trim().toLowerCase();
+  if (!q || q.length < 2) { hintEl.textContent = ''; hintEl.className = 'price-hint'; return; }
+  // 找最近一次同名品項
+  const hits = [];
+  orders.forEach(o => {
+    o.items.forEach(i => {
+      if (i.name.toLowerCase().includes(q) && i.price > 0) {
+        hits.push({ date: o.date, name: i.name, price: i.price, vendor: o.vendor });
+      }
+    });
+  });
+  if (!hits.length) { hintEl.textContent = ''; return; }
+  hits.sort((a, b) => b.date.localeCompare(a.date));
+  const last = hits[0];
+  const curPrice = parseFloat(priceEl?.value) || 0;
+  let cls = 'price-hint', arrow = '';
+  if (curPrice > 0) {
+    if (curPrice > last.price) { cls = 'price-hint up'; arrow = ' ▲'; }
+    else if (curPrice < last.price) { cls = 'price-hint down'; arrow = ' ▼'; }
+    else { cls = 'price-hint same'; arrow = ' ＝'; }
+  }
+  hintEl.className = cls;
+  hintEl.textContent = `上次：$${last.price.toLocaleString()}／${last.date}（${last.vendor}）${arrow}`;
+}
+
+function removeItem(id) { const el = document.getElementById('item-'+id); if(el) el.remove(); calcTotal(); }
+
+function calcTotal() {
+  let total = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const id = row.id.replace('item-','');
+    const p = parseFloat(document.getElementById('iprice-'+id)?.value)||0;
+    const q = parseFloat(document.getElementById('iqty-'+id)?.value)||0;
+    const sub = p*q;
+    const subEl = document.getElementById('isub-'+id);
+    if(subEl) subEl.value = sub>0?'$'+sub.toLocaleString():'';
+    total += sub;
+  });
+  document.getElementById('order-total').textContent = '$'+Math.round(total).toLocaleString();
+}
+
+async function saveOrder() {
+  const date = document.getElementById('f-date').value;
+  const orderId = document.getElementById('f-orderid').value.trim();
+  const vendor = document.getElementById('f-vendor').value.trim();
+  if (!date||!orderId||!vendor) { alert('請填寫日期、訂單編號、廠商名稱'); return; }
+  const items = [];
+  document.querySelectorAll('.item-row').forEach(row => {
+    const id = row.id.replace('item-','');
+    const name = document.getElementById('iname-'+id)?.value.trim();
+    const price = parseFloat(document.getElementById('iprice-'+id)?.value)||0;
+    const qty = parseFloat(document.getElementById('iqty-'+id)?.value)||0;
+    const unit = document.getElementById('iunit-'+id)?.value || '斤';
+    if(name) items.push({name,price,qty,unit});
+  });
+  if(!items.length) { alert('請至少新增一個商品品項'); return; }
+  const total = Math.round(items.reduce((s,i)=>s+i.price*i.qty,0));
+  const isPaid = document.getElementById('f-paid').checked;
+  const paidDate = isPaid ? (document.getElementById('f-paid-date').value || new Date().toISOString().slice(0,10)) : '';
+  const payMethod = document.querySelector('input[name=paymethod]:checked')?.value || '';
+  const payNote = document.getElementById('f-pay-note').value.trim();
+  const note = document.getElementById('f-note').value.trim();
+  const newOrder = {
+    id: Date.now().toString(), date, orderId, vendor, items, total,
+    status: isPaid ? 'paid' : 'pending',
+    paidDate,
+    payMethod,
+    payNote,
+    note
+  };
+  orders.push(newOrder);
+  await persist(newOrder, 'insert');
+  toast('✓ 訂單已儲存');
+  document.getElementById('save-msg').textContent = '✓ 訂單已儲存';
+  setTimeout(()=>document.getElementById('save-msg').textContent='',3000);
+  initForm();
+}
+
+function resetForm() { initForm(); }
+
+// ── 月底結算 ──────────────────────────────────────────
+function renderMonthly() {
+  const ym = document.getElementById('monthly-month').value;
+  if(!ym){document.getElementById('monthly-summary').innerHTML='<div class="empty">請選擇月份</div>';return;}
+  const list = orders.filter(o=>o.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!list.length){document.getElementById('monthly-summary').innerHTML=`<div class="empty">${ym} 尚無訂單</div>`;document.getElementById('monthly-table').innerHTML='';return;}
+  const total = list.reduce((s,o)=>s+o.total,0);
+  const paid = list.filter(o=>o.status==='paid').reduce((s,o)=>s+o.total,0);
+  const unpaid = total-paid;
+  document.getElementById('monthly-summary').innerHTML=`
+    <div class="metrics" style="margin-bottom:1rem;">
+      <div class="metric"><div class="metric-label">訂單筆數</div><div class="metric-value">${list.length}</div></div>
+      <div class="metric"><div class="metric-label">月份總金額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">已付款</div><div class="metric-value ok">$${paid.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">待付款</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>
+    </div>`;
+  document.getElementById('monthly-table').innerHTML=`
+    <table>
+      <thead><tr><th>日期</th><th>訂單編號</th><th>廠商</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日期</th><th class="no-print">操作</th></tr></thead>
+      <tbody>
+        ${list.map(o=>`<tr>
+          <td>${o.date}</td><td class="mono">${o.orderId||'—'}</td>
+          <td style="font-weight:500;">${o.vendor}</td>
+          <td style="color:var(--text2);font-size:12px;">${o.items.map(i=>i.name).join('、')}</td>
+          <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+          <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
+          <td style="font-size:12px;color:var(--text3);">${o.paidDate||'—'}</td>
+          <td class="no-print">${o.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openModal('${o.id}');document.getElementById('modal-bg').addEventListener('transitionend',()=>renderMonthly(),{once:true})">標記付款</button>`:''}</td>
+        </tr>`).join('')}
+        <tr class="total-row"><td colspan="4" style="text-align:right;padding-right:1rem;">本月合計</td><td>$${total.toLocaleString()}</td><td colspan="3"></td></tr>
+      </tbody>
+    </table>`;
+}
+
+function printMonthly() {
+  if(!document.getElementById('monthly-table').innerHTML.trim()){alert('請先選擇月份並按查詢');return;}
+  const ym = document.getElementById('monthly-month').value;
+  const [y,m] = ym.split('-');
+  document.getElementById('print-title').textContent = `惟元門市 ${y} 年 ${parseInt(m)} 月 進貨報表`;
+  window.print();
+}
+
+// ── 廠商彙總 ──────────────────────────────────────────
+function clearVendorFilters() {
+  document.getElementById('vendor-search').value = '';
+  document.getElementById('vendor-date-from').value = '';
+  document.getElementById('vendor-date-to').value = '';
+  renderVendors();
+}
+
+function renderVendors() {
+  const search = document.getElementById('vendor-search').value.toLowerCase();
+  const dateFrom = document.getElementById('vendor-date-from').value;
+  const dateTo = document.getElementById('vendor-date-to').value;
+  const hasRange = dateFrom || dateTo;
+
+  // 更新區間標籤
+  const rangeLabel = document.getElementById('vendor-range-label');
+  if (hasRange) {
+    rangeLabel.textContent = `篩選中：${dateFrom||'—'} ～ ${dateTo||'—'}`;
+  } else {
+    rangeLabel.textContent = '（未設定則顯示全部）';
+  }
+
+  // 依廠商聚合（依日期區間過濾）
+  const map = {};
+  orders.forEach(o => {
+    if (dateFrom && o.date < dateFrom) return;
+    if (dateTo && o.date > dateTo) return;
+    if (!map[o.vendor]) map[o.vendor] = { orders:[], total:0, paid:0, unpaid:0 };
+    map[o.vendor].orders.push(o);
+    map[o.vendor].total += o.total;
+    if (o.status === 'paid') map[o.vendor].paid += o.total;
+    else map[o.vendor].unpaid += o.total;
+  });
+
+  let names = Object.keys(map).filter(v => !search || v.toLowerCase().includes(search));
+  names.sort((a, b) => map[b].total - map[a].total);
+
+  // 區間彙總橫列
+  const summaryBar = document.getElementById('vendor-summary-bar');
+  if (names.length > 0) {
+    const totalAll = names.reduce((s, v) => s + map[v].total, 0);
+    const paidAll  = names.reduce((s, v) => s + map[v].paid, 0);
+    const unpaidAll= names.reduce((s, v) => s + map[v].unpaid, 0);
+    const orderCount = names.reduce((s, v) => s + map[v].orders.length, 0);
+    const rangeText = hasRange
+      ? `${dateFrom||'最早'} ～ ${dateTo||'最新'}`
+      : '全部期間';
+    summaryBar.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow);">
+        <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem;">
+          ${rangeText}　共 ${names.length} 家廠商・${orderCount} 筆訂單
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">區間進貨總額</div><div style="font-size:22px;font-weight:600;letter-spacing:-.02em;">$${totalAll.toLocaleString()}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">已付款</div><div style="font-size:22px;font-weight:600;color:var(--green);">$${paidAll.toLocaleString()}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">待付款</div><div style="font-size:22px;font-weight:600;color:var(--amber);">$${unpaidAll.toLocaleString()}</div></div>
+        </div>
+      </div>`;
+  } else {
+    summaryBar.innerHTML = '';
+  }
+
+  if (!names.length) {
+    document.getElementById('vendor-cards').innerHTML = '<div class="empty">此區間內沒有符合的訂單</div>';
+    return;
+  }
+
+  document.getElementById('vendor-cards').innerHTML = names.map(v => {
+    const d = map[v];
+    const rows = d.orders.sort((a, b) => b.date.localeCompare(a.date)).map(o => `
+      <tr class="order-row" onclick="showDetail('${o.id}')">
+        <td>${o.date}</td>
+        <td class="mono">${o.orderId||'—'}</td>
+        <td style="color:var(--text2);font-size:12px;">${o.items.map(i=>i.name).join('、')}</td>
+        <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+        <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
+        <td style="font-size:12px;color:var(--text3);">${o.paidDate||'—'}</td>
+      </tr>`).join('');
+    return `<div class="vendor-card">
+      <div class="vendor-header">
+        <div><div class="vendor-name">${v}</div><div class="vendor-meta">${d.orders.length} 筆訂單</div></div>
+        <div style="text-align:right;"><div style="font-size:11px;color:var(--text3);">${hasRange?'區間':'累計'}採購金額</div><div style="font-size:22px;font-weight:600;">$${d.total.toLocaleString()}</div></div>
+      </div>
+      <div class="vendor-stats">
+        <div class="vendor-stat"><div class="vendor-stat-label">已付款</div><div class="vendor-stat-value" style="color:var(--green);">$${d.paid.toLocaleString()}</div></div>
+        <div class="vendor-stat"><div class="vendor-stat-label">待付款</div><div class="vendor-stat-value" style="color:var(--amber);">$${d.unpaid.toLocaleString()}</div></div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>日期</th><th>訂單編號</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 歷史價格查詢 ──────────────────────────────────────
+function initPriceSearch() {
+  const vendors = [...new Set(orders.map(o=>o.vendor))].sort();
+  const sel = document.getElementById('price-vendor');
+  sel.innerHTML = '<option value="">所有廠商</option>' + vendors.map(v=>`<option value="${v}">${v}</option>`).join('');
+  document.getElementById('price-search').value = '';
+  document.getElementById('price-results').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:1rem 0;">輸入商品名稱開始查詢，例如：北耆王、天麻、枸杞、特炊芎…</div>';
+}
+
+function renderPriceSearch() {
+  const q = document.getElementById('price-search').value.toLowerCase().trim();
+  const fv = document.getElementById('price-vendor').value;
+  if (!q) { document.getElementById('price-results').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:1rem 0;">輸入商品名稱開始查詢…</div>'; return; }
+  
+  const hits = [];
+  orders.forEach(o => {
+    if (fv && o.vendor !== fv) return;
+    o.items.forEach(i => {
+      if (i.name.toLowerCase().includes(q)) {
+        hits.push({ date: o.date, vendor: o.vendor, name: i.name, qty: i.qty, price: i.price, orderId: o.orderId });
+      }
+    });
+  });
+  hits.sort((a, b) => b.date.localeCompare(a.date));
+  
+  if (!hits.length) { document.getElementById('price-results').innerHTML = '<div class="empty">找不到相符的商品記錄</div>'; return; }
+  
+  // 計算統計
+  const prices = hits.map(h => h.price).filter(p => p > 0);
+  const minP = Math.min(...prices), maxP = Math.max(...prices), avgP = prices.reduce((s,p)=>s+p,0)/prices.length;
+  
+  document.getElementById('price-results').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;">
+      <div class="metric"><div class="metric-label">查詢筆數</div><div class="metric-value">${hits.length}</div></div>
+      <div class="metric"><div class="metric-label">價格範圍</div><div class="metric-value" style="font-size:16px;">$${minP.toLocaleString()} ~ $${maxP.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">平均單價</div><div class="metric-value">$${Math.round(avgP).toLocaleString()}</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日期</th><th>廠商</th><th>商品名稱</th><th>數量（斤）</th><th>單價</th><th>小計</th></tr></thead>
+        <tbody>
+          ${hits.map(h=>`<tr>
+            <td>${h.date}</td>
+            <td style="font-weight:500;">${h.vendor}</td>
+            <td>${h.name}</td>
+            <td style="color:var(--text2);">${h.qty}</td>
+            <td style="font-weight:600;color:var(--blue);">$${h.price.toLocaleString()}</td>
+            <td style="color:var(--text2);">$${Math.round(h.qty*h.price).toLocaleString()}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── 匯出 & 備份 ───────────────────────────────────────
+function exportCSV() {
+  let csv = '\uFEFF日期,訂單編號,廠商,商品名,數量,單位,單價,小計,訂單總金額,狀態,付款日期,付款方式,付款備註,訂單備註\n';
+  orders.sort((a,b)=>a.date.localeCompare(b.date)).forEach(o => {
+    o.items.forEach((item,i) => {
+      csv += [o.date, o.orderId, o.vendor, item.name, item.qty, item.unit||'斤', item.price,
+        Math.round(item.qty*item.price), i===0?o.total:'',
+        o.status==='paid'?'已付款':'未付款', o.paidDate||'',
+        i===0?(o.payMethod||''):'' , i===0?(o.payNote||''):'',
+        i===0?(o.note||''):''
+      ].join(',') + '\n';
+    });
+  });
+  dl(new Blob([csv],{type:'text/csv;charset=utf-8'}), '惟元進貨記錄_'+today()+'.csv');
+  toast('✓ CSV 已匯出');
+}
+
+function backupData() {
+  const blob = new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
+  dl(blob, '惟元進貨備份_'+today()+'.json');
+  toast('✓ 備份完成');
+}
+
+function dl(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ── 啟動 ──────────────────────────────────────────────
+(async () => { await loadOrders(); })();
+</script>
+</body>
+</html>
