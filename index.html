@@ -652,7 +652,7 @@ function openModal(id) {
   document.getElementById('modal-bg').style.display = 'flex';
 }
 function closeModal() { document.getElementById('modal-bg').style.display = 'none'; pendingPaidId = null; }
-function confirmPaid() {
+async function confirmPaid() {
   const d = document.getElementById('modal-date').value;
   if (!d) { alert('請選擇付款日期'); return; }
   const o = orders.find(x => x.id === pendingPaidId);
