@@ -444,9 +444,20 @@ async function loadOrders() {
   setSyncStatus('syncing', '載入中…');
   try {
     // 先讀訂單主表
-    const ordersData = await sbFetch('orders?select=*&order=date.asc');
-    // 再讀品項
-    const itemsData = await sbFetch('order_items?select=*&order=sort_order.asc');
+    const ordersData = await sbFetch('orders?select=*&order=date.asc&limit=10000');
+    // 再讀品項（分批讀取避免 1000 筆限制）
+    let itemsData = [];
+    let offset = 0;
+    const batchSize = 1000;
+    while (true) {
+      const batch = await sbFetch(`order_items?select=*&order=sort_order.asc&limit=${batchSize}&offset=${offset}`, {
+        headers: { 'Range-Unit': 'items', 'Range': `${offset}-${offset + batchSize - 1}` }
+      });
+      if (!batch || batch.length === 0) break;
+      itemsData = itemsData.concat(batch);
+      if (batch.length < batchSize) break;
+      offset += batchSize;
+    }
 
     // 組合
     const itemMap = {};
@@ -1192,6 +1203,8 @@ function addItemRowTo(fid) {
     <input type="text" id="isub-${id}" readonly placeholder="—">
     <button class="remove-btn" onclick="document.getElementById('item-${id}').remove();calcTotalFor(${fid})">✕</button>`;
   document.getElementById('items-container-' + fid).appendChild(div);
+  // 自動聚焦到新行的商品名稱
+  setTimeout(() => document.getElementById('iname-' + id)?.focus(), 50);
 }
 
 function showPriceHintFor(id) {
