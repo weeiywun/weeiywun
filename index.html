@@ -272,6 +272,7 @@ tr:hover td{background:var(--bg);}
     <div style="display:flex;gap:4px;margin-bottom:0;" id="vendor-category-tabs">
       <button class="vendor-cat-tab active" data-cat="中藥材" onclick="selectVendorCategory('中藥材')">中藥材</button>
       <button class="vendor-cat-tab" data-cat="包裝材" onclick="selectVendorCategory('包裝材')">包裝材</button>
+      <button class="vendor-cat-tab" data-cat="其他" onclick="selectVendorCategory('其他')">其他</button>
       <button class="vendor-cat-tab" data-cat="物流" onclick="selectVendorCategory('物流')">物流</button>
       <button class="vendor-cat-tab" data-cat="大樓修繕" onclick="selectVendorCategory('大樓修繕')">大樓修繕</button>
     </div>
@@ -1328,7 +1329,7 @@ function renderMonthly() {
   const paidVendors   = sortVendors(vendorNames.filter(v => vendorMap[v].unpaid === 0));
   vendorNames = [...unpaidVendors, ...paidVendors];
 
-  const vendorBlocks = vendorNames.map(v => {
+  const vendorBlocks = vendorNames.map((v, idx) => {
     const vd = vendorMap[v];
     const isAllPaid = vd.unpaid === 0;
     const orderRows = vd.orders
@@ -1346,28 +1347,34 @@ function renderMonthly() {
             : ''}</td>
         </tr>`).join('');
 
+    const dashedTop = idx > 0
+      ? `border-top:2px dashed #bbb;margin-top:1.25rem;padding-top:1.25rem;`
+      : '';
+
     return `
-      <div style="margin-bottom:1.25rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);${isAllPaid?'opacity:.75':''}">
-        <!-- 廠商標題列 -->
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.25rem;background:${isAllPaid?'var(--surface2)':'var(--surface)'};border-bottom:1px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:15px;font-weight:600;">${v}</span>
-            <span style="font-size:12px;color:var(--text3);">${vd.orders.length} 筆訂單</span>
-            ${isAllPaid ? '<span class="badge badge-paid">全數付清</span>' : `<span class="badge badge-pending">待付 $${vd.unpaid.toLocaleString()}</span>`}
+      <div style="${dashedTop}break-inside:avoid;page-break-inside:avoid;">
+        <div style="margin-bottom:.5rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);${isAllPaid?'opacity:.75':''}">
+          <!-- 廠商標題列 -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.25rem;background:${isAllPaid?'var(--surface2)':'var(--surface)'};border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:15px;font-weight:600;">${v}</span>
+              <span style="font-size:12px;color:var(--text3);">${vd.orders.length} 筆訂單</span>
+              ${isAllPaid ? '<span class="badge badge-paid">全數付清</span>' : `<span class="badge badge-pending">待付 $${vd.unpaid.toLocaleString()}</span>`}
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:var(--text3);">本月採購</div>
+              <div style="font-size:18px;font-weight:600;">$${vd.total.toLocaleString()}</div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:var(--text3);">本月採購</div>
-            <div style="font-size:18px;font-weight:600;">$${vd.total.toLocaleString()}</div>
+          <!-- 訂單明細 -->
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr>
+                <th>日期</th><th>訂單編號</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日期</th><th class="no-print">操作</th>
+              </tr></thead>
+              <tbody>${orderRows}</tbody>
+            </table>
           </div>
-        </div>
-        <!-- 訂單明細 -->
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr>
-              <th>日期</th><th>訂單編號</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日期</th><th class="no-print">操作</th>
-            </tr></thead>
-            <tbody>${orderRows}</tbody>
-          </table>
         </div>
       </div>`;
   }).join('');
@@ -1424,9 +1431,8 @@ function printMonthly() {
   );
 
   const catGroups = {};
-  // 依照 VENDOR_CATEGORIES 順序建立分類（保留空分類）
-  Object.keys(VENDOR_CATEGORIES).forEach(cat => { catGroups[cat] = []; });
-  catGroups['其他'] = [];
+  // 依照固定順序建立分類（其他在物流前）
+  ['中藥材','包裝材','其他','物流','大樓修繕'].forEach(cat => { catGroups[cat] = []; });
   unpaidVendors.forEach(v => {
     let cat = '其他';
     for (const [c, vlist] of Object.entries(VENDOR_CATEGORIES)) {
@@ -1440,9 +1446,15 @@ function printMonthly() {
 
   // 統一欄寬的 table style
   const tableStyle = `width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;`;
-  const colDefs = `<colgroup><col style="width:35%;"><col style="width:35%;"><col style="width:30%;"></colgroup>`;
-  const thStyle = `padding:6px 10px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;`;
-  const tdStyle = `padding:5px 10px;border:1px solid #ddd;`;
+  const colDefs = `<colgroup>
+    <col style="width:18%;">
+    <col style="width:18%;">
+    <col style="width:32%;">
+    <col style="width:16%;">
+    <col style="width:16%;">
+  </colgroup>`;
+  const thStyle = `padding:6px 8px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;`;
+  const tdStyle = `padding:5px 8px;border:1px solid #ddd;`;
 
   let summaryHTML = `
     <div style="margin-bottom:1rem;">
@@ -1469,11 +1481,13 @@ function printMonthly() {
                 <th style="text-align:left;${thStyle}">廠商</th>
                 <th style="text-align:center;${thStyle}">未付款訂單數</th>
                 <th style="text-align:right;${thStyle}">未付款總額</th>
+                <th style="text-align:center;${thStyle}">現金／匯款</th>
+                <th style="text-align:center;${thStyle}">支票</th>
               </tr>
             </thead>
             <tbody>
               ${vendors.length === 0
-                ? `<tr><td colspan="3" style="text-align:center;${tdStyle}color:#aaa;">— 本月無未付款 —</td></tr>`
+                ? `<tr><td colspan="5" style="text-align:center;${tdStyle}color:#aaa;">— 本月無未付款 —</td></tr>`
                 : vendors.map(v => {
                     const vd = vendorMap[v];
                     const unpaidOrders = vd.orders.filter(o=>o.status!=='paid');
@@ -1481,6 +1495,8 @@ function printMonthly() {
                       <td style="${tdStyle}font-weight:500;">${v}</td>
                       <td style="text-align:center;${tdStyle}">${unpaidOrders.length} 筆</td>
                       <td style="text-align:right;${tdStyle}font-weight:600;">$${vd.unpaid.toLocaleString()}</td>
+                      <td style="${tdStyle}"></td>
+                      <td style="${tdStyle}"></td>
                     </tr>`;
                   }).join('')
               }
@@ -1548,19 +1564,26 @@ function renderVendors() { renderVendorTabs(); }
 function renderVendorTabs() {
   const search = document.getElementById('vendor-search').value.toLowerCase();
   const map = getVendorMap();
+  const allCatVendors = new Set(Object.values(VENDOR_CATEGORIES).flat());
 
-  // 只顯示當前分類的廠商
-  const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
-  let names = catVendors.filter(v =>
-    map[v] && (!search || v.toLowerCase().includes(search))
-  );
-  // 分類外但有資料且符合搜尋的廠商也顯示
-  if (search) {
-    const allCatVendors = new Set(Object.values(VENDOR_CATEGORIES).flat());
-    Object.keys(map).forEach(v => {
-      if (!allCatVendors.has(v) && v.toLowerCase().includes(search) && !names.includes(v))
-        names.push(v);
-    });
+  let names;
+  if (currentCategory === '其他') {
+    // 其他：不在四大分類中的廠商，依資料排序
+    names = Object.keys(map)
+      .filter(v => !allCatVendors.has(v) && (!search || v.toLowerCase().includes(search)))
+      .sort((a,b) => a.localeCompare(b, 'zh-TW'));
+  } else {
+    const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
+    names = catVendors.filter(v =>
+      map[v] && (!search || v.toLowerCase().includes(search))
+    );
+    // 搜尋時也顯示其他分類符合的廠商
+    if (search) {
+      Object.keys(map).forEach(v => {
+        if (!allCatVendors.has(v) && v.toLowerCase().includes(search) && !names.includes(v))
+          names.push(v);
+      });
+    }
   }
 
   if (!names.length) {
