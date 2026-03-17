@@ -196,8 +196,8 @@ tr:hover td{background:var(--bg);}
 
 <div class="nav no-print">
   <div class="nav-inner">
-    <button class="nav-tab active" data-tab="orders" onclick="switchTab('orders')">訂單管理</button>
-    <button class="nav-tab" data-tab="add" onclick="switchTab('add')">新增訂單</button>
+    <button class="nav-tab active" data-tab="add" onclick="switchTab('add')">新增訂單</button>
+    <button class="nav-tab" data-tab="orders" onclick="switchTab('orders')">訂單管理</button>
     <button class="nav-tab" data-tab="monthly" onclick="switchTab('monthly')">月底結算</button>
     <button class="nav-tab" data-tab="vendors" onclick="switchTab('vendors')">廠商彙總</button>
     <button class="nav-tab" data-tab="price" onclick="switchTab('price')">歷史價格查詢</button>
@@ -207,7 +207,7 @@ tr:hover td{background:var(--bg);}
 <div class="main">
 
   <!-- 訂單管理 -->
-  <div id="sec-orders" class="section active">
+  <div id="sec-orders" class="section">
     <div class="metrics" style="grid-template-columns:repeat(3,1fr);" id="summary-cards"></div>
     <div class="card">
       <div class="filter-row">
@@ -234,7 +234,7 @@ tr:hover td{background:var(--bg);}
   </div>
 
   <!-- 新增訂單 -->
-  <div id="sec-add" class="section">
+  <div id="sec-add" class="section active">
 
     <!-- 訂單清單（可新增多張）-->
     <div id="order-forms-container"></div>
@@ -1013,11 +1013,11 @@ function createOrderFormHTML(fid) {
 
     <!-- 商品明細 -->
     <div style="margin-top:1rem;">
-      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 0.8fr 0.7fr 1fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
         <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">商品名稱</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單價（元）</span>
         <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">數量</span>
         <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單位</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單價（元）</span>
         <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">小計</span>
         <span></span>
       </div>
@@ -1065,10 +1065,21 @@ function createOrderFormHTML(fid) {
 function addOrderForm() {
   formCounter++;
   const fid = formCounter;
+  // 帶入前一張訂單的廠商
+  const prevVendor = formCounter > 1 ? getVendorForForm(formCounter - 1) : '';
   const container = document.getElementById('order-forms-container');
   container.insertAdjacentHTML('beforeend', createOrderFormHTML(fid));
   buildVendorSelect('f-vendor-sel-' + fid);
+  // 自動選入前一張廠商
+  if (prevVendor) {
+    const sel = document.getElementById('f-vendor-sel-' + fid);
+    if ([...sel.options].some(o => o.value === prevVendor)) {
+      sel.value = prevVendor;
+    }
+  }
   addItemRowTo(fid);
+  // 捲動到新表單
+  document.getElementById('oform-' + fid).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function removeOrderForm(fid) {
@@ -1115,10 +1126,9 @@ function addItemRowTo(fid) {
   div.className = 'item-row'; div.id = 'item-' + id;
   div.innerHTML = `
     <div>
-      <input type="text" placeholder="商品名稱" id="iname-${id}" oninput="calcTotalFor(${fid});showPriceHintFor('${id}')" onblur="showPriceHintFor('${id}')">
+      <input type="text" lang="zh-TW" placeholder="商品名稱" id="iname-${id}" oninput="calcTotalFor(${fid});showPriceHintFor('${id}')" onblur="showPriceHintFor('${id}')">
       <div class="price-hint" id="phint-${id}"></div>
     </div>
-    <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotalFor(${fid})">
     <input type="number" placeholder="1" id="iqty-${id}" min="0" step="0.01" value="1" oninput="calcTotalFor(${fid})">
     <select id="iunit-${id}">
       <option value="斤">斤</option><option value="公斤">公斤</option>
@@ -1126,6 +1136,7 @@ function addItemRowTo(fid) {
       <option value="包">包</option><option value="罐">罐</option>
       <option value="盒">盒</option><option value="式">式</option>
     </select>
+    <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotalFor(${fid})">
     <input type="text" id="isub-${id}" readonly placeholder="—">
     <button class="remove-btn" onclick="document.getElementById('item-${id}').remove();calcTotalFor(${fid})">✕</button>`;
   document.getElementById('items-container-' + fid).appendChild(div);
@@ -1738,7 +1749,7 @@ async function forceResync() {
 function today() { return new Date().toISOString().slice(0,10); }
 
 // ── 啟動 ──────────────────────────────────────────────
-(async () => { await loadOrders(); })();
+(async () => { await loadOrders(); addOrderForm(); })();
 </script>
 </body>
 </html>
