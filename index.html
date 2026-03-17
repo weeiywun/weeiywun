@@ -1077,7 +1077,7 @@ function addOrderForm() {
       sel.value = prevVendor;
     }
   }
-  addItemRowTo(fid);
+  for (let i = 0; i < 8; i++) addItemRowTo(fid);
   // 捲動到新表單
   document.getElementById('oform-' + fid).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
