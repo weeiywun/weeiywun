@@ -158,7 +158,7 @@ tr:hover td{background:var(--bg);}
 @media print{
   .header,.nav,.filter-row,.btn,.no-print{display:none!important;}
   .section{display:block!important;}
-  #sec-orders,#sec-add,#sec-vendors,#sec-price{display:none!important;}
+  #sec-orders,#sec-add,#sec-vendors,#sec-price,#sec-cod{display:none!important;}
   #sec-monthly{display:block!important;}
   body{background:#fff;margin:0;}
   .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;margin-bottom:.5rem;}
@@ -252,6 +252,7 @@ tr:hover td{background:var(--bg);}
     <button class="nav-tab" data-tab="monthly" onclick="switchTab('monthly')">月底結算</button>
     <button class="nav-tab" data-tab="vendors" onclick="switchTab('vendors')">廠商彙總</button>
     <button class="nav-tab" data-tab="price" onclick="switchTab('price')">歷史價格查詢</button>
+    <button class="nav-tab" data-tab="cod" onclick="switchTab('cod')">貨到付款查帳</button>
   </div>
 </div>
 
@@ -360,6 +361,39 @@ tr:hover td{background:var(--bg);}
         </select>
       </div>
       <div id="price-results"></div>
+    </div>
+  </div>
+
+  <!-- 貨到付款查帳 -->
+  <div id="sec-cod" class="section">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1.25rem;">新增代收款記錄</div>
+      <div class="form-grid">
+        <div class="form-group"><label>寄件日期 *</label><input type="date" id="cod-send-date"></div>
+        <div class="form-group"><label>收件人 *</label><input type="text" id="cod-recipient" placeholder="例：王小明"></div>
+        <div class="form-group"><label>物流編號 *</label><input type="text" id="cod-tracking" placeholder="例：123456789"></div>
+        <div class="form-group"><label>收款金額 *</label><input type="number" id="cod-amount" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-group" style="margin-top:8px;">
+        <label>備註</label>
+        <input type="text" id="cod-note" placeholder="選填">
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
+        <button class="btn btn-primary" onclick="addCodRecord()">新增記錄</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <div style="font-size:13px;font-weight:500;color:var(--text2);">代收款記錄</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" id="cod-show-uncollected" onchange="renderCodList()" checked>
+            只顯示未到帳
+          </label>
+        </div>
+      </div>
+      <div id="cod-list"></div>
     </div>
   </div>
 
@@ -679,6 +713,7 @@ function switchTab(t) {
   if (t === 'add') { if(document.querySelectorAll('.order-form-card').length===0) addOrderForm(); }
   if (t === 'vendors') renderVendors();
   if (t === 'price') initPriceSearch();
+  if (t === 'cod') { renderCodList(); initCodDate(); }
 }
 
 // ── 摘要卡片 ──────────────────────────────────────────
@@ -1899,8 +1934,270 @@ async function forceResync() {
 
 function today() { return new Date().toISOString().slice(0,10); }
 
+// ── 貨到付款查帳 ──────────────────────────────────────
+// ── 貨到付款查帳 ──────────────────────────────────────
+
+// 計算預計入帳日：寄件日+1=收件日
+// 收件日週一~週四 → 下週二
+// 收件日週五~週日（週末）→ 下下週二
+function calcExpectedDate(sendDate) {
+  const d = new Date(sendDate);
+  d.setDate(d.getDate() + 1); // 收件日
+  const dow = d.getDay(); // 0=日,1=一,2=二,...,6=六
+
+  // 先找到下一個週二
+  let daysToNextTue = (2 - dow + 7) % 7;
+  if (daysToNextTue === 0) daysToNextTue = 7; // 收件日本身是週二，跳到下週二
+
+  // 收件日是週五(5)、週六(6)、週日(0) → 再加一週
+  if (dow === 5 || dow === 6 || dow === 0) {
+    daysToNextTue += 7;
+  }
+
+  d.setDate(d.getDate() + daysToNextTue);
+  return d.toISOString().slice(0, 10);
+}
+
+async function loadCodRecords() {
+  try {
+    const data = await sbFetch('cod_records?select=*&order=send_date.desc');
+    return (data || []).map(r => ({
+      id: r.id,
+      sendDate: r.send_date,
+      recipient: r.recipient,
+      tracking: r.tracking,
+      amount: Number(r.amount),
+      note: r.note || '',
+      expectedDate: r.expected_date || '',
+      collected: r.collected || false,
+      collectedDate: r.collected_date || ''
+    }));
+  } catch(e) {
+    console.error('COD 載入失敗', e);
+    return [];
+  }
+}
+
+async function saveCodRecord(rec) {
+  await sbFetch('cod_records', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      id: rec.id,
+      send_date: rec.sendDate,
+      recipient: rec.recipient,
+      tracking: rec.tracking,
+      amount: rec.amount,
+      note: rec.note || '',
+      expected_date: rec.expectedDate || '',
+      collected: rec.collected || false,
+      collected_date: rec.collectedDate || ''
+    })
+  });
+}
+
+async function updateCodRecord(id, patch) {
+  await sbFetch('cod_records?id=eq.' + id, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify(patch)
+  });
+}
+
+async function deleteCodFromDB(id) {
+  await sbFetch('cod_records?id=eq.' + id, {
+    method: 'DELETE',
+    prefer: 'return=minimal'
+  });
+}
+
+function initCodDate() {
+  const el = document.getElementById('cod-send-date');
+  if (el && !el.value) el.value = today();
+}
+
+async function addCodRecord() {
+  const sendDate  = document.getElementById('cod-send-date').value;
+  const recipient = document.getElementById('cod-recipient').value.trim();
+  const tracking  = document.getElementById('cod-tracking').value.trim();
+  const amount    = parseFloat(document.getElementById('cod-amount').value) || 0;
+  const note      = document.getElementById('cod-note').value.trim();
+
+  if (!sendDate || !recipient || !tracking || !amount) {
+    alert('請填寫寄件日期、收件人、物流編號與收款金額');
+    return;
+  }
+
+  const expectedDate = calcExpectedDate(sendDate);
+  const rec = {
+    id: Date.now().toString(),
+    sendDate, recipient, tracking, amount, note,
+    expectedDate,
+    collected: false,
+    collectedDate: ''
+  };
+
+  const btn = document.querySelector('#sec-cod .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
+
+  try {
+    await saveCodRecord(rec);
+    document.getElementById('cod-recipient').value = '';
+    document.getElementById('cod-tracking').value = '';
+    document.getElementById('cod-amount').value = '';
+    document.getElementById('cod-note').value = '';
+    document.getElementById('cod-send-date').value = today();
+    await renderCodList();
+    toast('✓ 代收款記錄已新增，預計入帳日：' + expectedDate);
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '新增記錄'; }
+  }
+}
+
+async function confirmCodCollected(id) {
+  const date = prompt('請輸入入帳日期：', today());
+  if (date === null) return;
+  if (!date.trim()) { alert('請填寫入帳日期'); return; }
+  try {
+    await updateCodRecord(id, { collected: true, collected_date: date.trim() });
+    await renderCodList();
+    toast('✓ 已確認到帳');
+  } catch(e) {
+    alert('更新失敗：' + e.message);
+  }
+}
+
+async function deleteCodRecord(id) {
+  if (!confirm('確定刪除這筆記錄？')) return;
+  try {
+    await deleteCodFromDB(id);
+    await renderCodList();
+    toast('已刪除');
+  } catch(e) {
+    alert('刪除失敗：' + e.message);
+  }
+}
+
+async function renderCodList() {
+  const container = document.getElementById('cod-list');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:1rem;color:var(--text3);font-size:13px;">載入中…</div>';
+
+  const all = await loadCodRecords();
+  const showUncollectedOnly = document.getElementById('cod-show-uncollected')?.checked;
+  const records = showUncollectedOnly ? all.filter(r => !r.collected) : all;
+
+  const todayStr = today();
+  const overdue  = all.filter(r => !r.collected && r.expectedDate && r.expectedDate <= todayStr);
+  const totalUncollected = all.filter(r => !r.collected).reduce((s, r) => s + r.amount, 0);
+  const uncollectedCount = all.filter(r => !r.collected).length;
+
+  if (all.length === 0) {
+    container.innerHTML = '<div class="empty">尚無代收款記錄</div>';
+    return;
+  }
+
+  // 逾期提醒區
+  const overdueHTML = overdue.length > 0 ? `
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:13px;">
+      <div style="font-weight:600;color:#856404;margin-bottom:.35rem;">⚠️ ${overdue.length} 筆款項已超過預計到帳日，請確認是否已入帳</div>
+      ${overdue.map(r => `<div style="color:#856404;font-size:12px;margin-top:2px;">・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}</div>`).join('')}
+    </div>` : '';
+
+  const statsHTML = `
+    ${overdueHTML}
+    <div style="display:flex;gap:1.5rem;padding:.75rem 1rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;font-size:13px;">
+      <div><span style="color:var(--text3);">待到帳筆數　</span><span style="font-weight:600;color:var(--amber);">${uncollectedCount} 筆</span></div>
+      <div><span style="color:var(--text3);">待到帳總額　</span><span style="font-weight:600;color:var(--amber);">$${totalUncollected.toLocaleString()}</span></div>
+    </div>`;
+
+  if (records.length === 0) {
+    container.innerHTML = statsHTML + '<div class="empty">所有款項均已到帳 ✓</div>';
+    return;
+  }
+
+  const rows = records.map(r => {
+    const isOverdue = !r.collected && r.expectedDate && r.expectedDate <= todayStr;
+    return `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--border);${r.collected ? 'opacity:.5;' : ''}${isOverdue ? 'background:rgba(255,193,7,.06);' : ''}">
+      <div>
+        <div style="font-size:12px;color:var(--text3);">寄件日</div>
+        <div style="font-size:13px;font-weight:500;">${r.sendDate}</div>
+        ${r.expectedDate ? `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--text3)'};margin-top:2px;">預計入帳 ${r.expectedDate}</div>` : ''}
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text3);">收件人</div>
+        <div style="font-size:13px;font-weight:500;">${r.recipient}</div>
+        ${r.note ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${r.note}</div>` : ''}
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text3);">物流編號</div>
+        <div style="font-size:13px;font-family:monospace;">${r.tracking}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text3);">收款金額</div>
+        <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
+        ${r.collected
+          ? `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 ${r.collectedDate}</div>`
+          : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        ${!r.collected
+          ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認到帳</button>`
+          : ''}
+        <button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = statsHTML + `
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      ${rows}
+    </div>`;
+}
+
+// 進入系統時檢查逾期 COD，有則彈出提醒
+async function checkCodAlert() {
+  try {
+    const all = await loadCodRecords();
+    const todayStr = today();
+    const overdue = all.filter(r => !r.collected && r.expectedDate && r.expectedDate <= todayStr);
+    if (overdue.length === 0) return;
+
+    const totalAmt = overdue.reduce((s, r) => s + r.amount, 0);
+    const lines = overdue.map(r => `・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}`).join('\n');
+
+    // 建立提醒 Modal
+    const div = document.createElement('div');
+    div.id = 'cod-alert-modal';
+    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:center;justify-content:center;';
+    div.innerHTML = `
+      <div style="background:#fff;border-radius:14px;padding:2rem;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="font-size:18px;font-weight:700;margin-bottom:.5rem;">⚠️ 貨到付款到帳提醒</div>
+        <div style="font-size:13px;color:#666;margin-bottom:1.25rem;">以下 ${overdue.length} 筆款項已超過預計入帳日，共 <strong>$${totalAmt.toLocaleString()}</strong>，請確認是否已入帳：</div>
+        <div style="background:#fff8e1;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.25rem;font-size:13px;line-height:2;">
+          ${overdue.map(r => `<div>・<strong>${r.recipient}</strong>　$${r.amount.toLocaleString()}　<span style="color:#999;">預計 ${r.expectedDate}</span></div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button onclick="document.getElementById('cod-alert-modal').remove()" class="btn">稍後處理</button>
+          <button onclick="document.getElementById('cod-alert-modal').remove();switchTab('cod')" class="btn btn-primary">前往查帳</button>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+  } catch(e) {
+    // 靜默失敗，不影響主系統
+  }
+}
+
 // ── 啟動 ──────────────────────────────────────────────
-(async () => { await loadOrders(); addOrderForm(); })();
+(async () => {
+  await loadOrders();
+  addOrderForm();
+  // 延遲 1 秒後檢查貨到付款逾期（讓主畫面先載入完成）
+  setTimeout(checkCodAlert, 1000);
+})();
 </script>
 </body>
 </html>
