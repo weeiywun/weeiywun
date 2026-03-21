@@ -712,12 +712,12 @@ function switchTab(t) {
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.getElementById('sec-' + t).classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (t === 'orders') { renderOrders(); renderSummary(); }
   if (t === 'add') { if(document.querySelectorAll('.order-form-card').length===0) addOrderForm(); renderSummary(); }
   if (t === 'vendors') renderVendors();
   if (t === 'price') initPriceSearch();
   if (t === 'cod') { renderCodList(); initCodDate(); }
+  setTimeout(() => window.scrollTo({ top: 0 }), 50);
 }
 
 // ── 摘要卡片 ──────────────────────────────────────────
@@ -1188,7 +1188,7 @@ function addOrderForm() {
       sel.value = prevVendor;
     }
   }
-  for (let i = 0; i < 8; i++) addItemRowTo(fid);
+  for (let i = 0; i < 8; i++) addItemRowTo(fid, false);
   // 捲動到頁面最上方
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1229,7 +1229,7 @@ function togglePaidFieldsFor(fid) {
 }
 
 let itemCounters = {};
-function addItemRowTo(fid) {
+function addItemRowTo(fid, autoFocus = true) {
   if (!itemCounters[fid]) itemCounters[fid] = 0;
   itemCounters[fid]++;
   const id = fid + '_' + itemCounters[fid];
@@ -1252,7 +1252,7 @@ function addItemRowTo(fid) {
     <button class="remove-btn" onclick="document.getElementById('item-${id}').remove();calcTotalFor(${fid})">✕</button>`;
   document.getElementById('items-container-' + fid).appendChild(div);
   // 自動聚焦到新行的商品名稱
-  setTimeout(() => document.getElementById('iname-' + id)?.focus(), 50);
+  if (autoFocus) setTimeout(() => document.getElementById('iname-' + id)?.focus(), 50);
 }
 
 function showPriceHintFor(id) {
@@ -2204,8 +2204,8 @@ async function checkCodAlert() {
   await loadOrders();
   addOrderForm();
   renderSummary();
-  window.scrollTo({ top: 0 });
-  setTimeout(checkCodAlert, 1000);
+  setTimeout(() => window.scrollTo({ top: 0 }), 100);
+  setTimeout(checkCodAlert, 1200);
 })();
 </script>
 </body>
