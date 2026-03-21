@@ -288,6 +288,9 @@ tr:hover td{background:var(--bg);}
   <!-- 新增訂單 -->
   <div id="sec-add" class="section active">
 
+    <!-- 本月摘要小卡 -->
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.25rem;" id="add-summary-cards"></div>
+
     <!-- 訂單清單（可新增多張）-->
     <div id="order-forms-container"></div>
 
@@ -709,8 +712,9 @@ function switchTab(t) {
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.getElementById('sec-' + t).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (t === 'orders') { renderOrders(); renderSummary(); }
-  if (t === 'add') { if(document.querySelectorAll('.order-form-card').length===0) addOrderForm(); }
+  if (t === 'add') { if(document.querySelectorAll('.order-form-card').length===0) addOrderForm(); renderSummary(); }
   if (t === 'vendors') renderVendors();
   if (t === 'price') initPriceSearch();
   if (t === 'cod') { renderCodList(); initCodDate(); }
@@ -722,10 +726,14 @@ function renderSummary() {
   const mo = orders.filter(o => o.date.startsWith(ym));
   const mTotal = mo.reduce((s, o) => s + o.total, 0);
   const unpaid = orders.filter(o => o.status === 'pending').reduce((s, o) => s + o.total, 0);
-  document.getElementById('summary-cards').innerHTML = `
+  const html = `
     <div class="metric"><div class="metric-label">本月訂單數</div><div class="metric-value">${mo.length}</div></div>
     <div class="metric"><div class="metric-label">本月進貨金額</div><div class="metric-value">$${mTotal.toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">累計未付款</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>`;
+  const sc = document.getElementById('summary-cards');
+  const asc = document.getElementById('add-summary-cards');
+  if (sc) sc.innerHTML = html;
+  if (asc) asc.innerHTML = html;
 }
 
 // ── 訂單列表 ──────────────────────────────────────────
@@ -1181,8 +1189,8 @@ function addOrderForm() {
     }
   }
   for (let i = 0; i < 8; i++) addItemRowTo(fid);
-  // 捲動到新表單
-  document.getElementById('oform-' + fid).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // 捲動到頁面最上方
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function removeOrderForm(fid) {
@@ -1237,7 +1245,7 @@ function addItemRowTo(fid) {
       <option value="斤">斤</option><option value="公斤">公斤</option>
       <option value="兩">兩</option><option value="個">個</option>
       <option value="包">包</option><option value="罐">罐</option>
-      <option value="盒">盒</option><option value="式">式</option>
+      <option value="盒">盒</option><option value="式">式</option><option value="項">項</option>
     </select>
     <input type="number" placeholder="0" id="iprice-${id}" min="0" oninput="calcTotalFor(${fid})">
     <input type="text" id="isub-${id}" readonly placeholder="—">
@@ -2195,7 +2203,8 @@ async function checkCodAlert() {
 (async () => {
   await loadOrders();
   addOrderForm();
-  // 延遲 1 秒後檢查貨到付款逾期（讓主畫面先載入完成）
+  renderSummary();
+  window.scrollTo({ top: 0 });
   setTimeout(checkCodAlert, 1000);
 })();
 </script>
