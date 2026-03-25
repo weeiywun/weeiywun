@@ -1978,7 +1978,8 @@ async function loadCodRecords() {
       note: r.note || '',
       expectedDate: r.expected_date || '',
       collected: r.collected || false,
-      collectedDate: r.collected_date || ''
+      collectedDate: r.collected_date || '',
+      actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null
     }));
   } catch(e) {
     console.error('COD 載入失敗', e);
@@ -1999,7 +2000,8 @@ async function saveCodRecord(rec) {
       note: rec.note || '',
       expected_date: rec.expectedDate || '',
       collected: rec.collected || false,
-      collected_date: rec.collectedDate || ''
+      collected_date: rec.collectedDate || '',
+      actual_amount: rec.actualAmount != null ? rec.actualAmount : null
     })
   });
 }
@@ -2065,13 +2067,28 @@ async function addCodRecord() {
 }
 
 async function confirmCodCollected(id) {
+  const records = await loadCodRecords();
+  const rec = records.find(r => r.id === id);
+  if (!rec) return;
+
   const date = prompt('請輸入入帳日期：', today());
   if (date === null) return;
   if (!date.trim()) { alert('請填寫入帳日期'); return; }
+
+  const actualInput = prompt(`請輸入實際到帳金額：\n（原始收款金額：$${rec.amount.toLocaleString()}）`, rec.amount);
+  if (actualInput === null) return;
+  const actualAmount = parseFloat(actualInput) || rec.amount;
+
   try {
-    await updateCodRecord(id, { collected: true, collected_date: date.trim() });
+    await updateCodRecord(id, {
+      collected: true,
+      collected_date: date.trim(),
+      actual_amount: actualAmount
+    });
     await renderCodList();
-    toast('✓ 已確認到帳');
+    const diff = actualAmount - rec.amount;
+    const diffText = diff !== 0 ? `（差額 ${diff > 0 ? '+' : ''}$${diff.toLocaleString()}）` : '';
+    toast(`✓ 已確認到帳 $${actualAmount.toLocaleString()} ${diffText}`);
   } catch(e) {
     alert('更新失敗：' + e.message);
   }
@@ -2148,7 +2165,15 @@ async function renderCodList() {
         <div style="font-size:12px;color:var(--text3);">收款金額</div>
         <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
         ${r.collected
-          ? `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 ${r.collectedDate}</div>`
+          ? (() => {
+              const actual = r.actualAmount != null ? r.actualAmount : r.amount;
+              const diff = actual - r.amount;
+              const diffText = diff !== 0
+                ? `<span style="color:${diff<0?'#e53e3e':'var(--green)'};">（${diff>0?'+':''}$${diff.toLocaleString()}）</span>`
+                : '';
+              return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${actual.toLocaleString()} ${diffText}</div>
+                      <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
+            })()
           : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
