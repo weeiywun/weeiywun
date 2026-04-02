@@ -20,7 +20,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;position:sticky;top:0;z-index:100;}
 .header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;}
 .logo{display:flex;align-items:center;gap:10px;}
-.logo-badge{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;}
+.logo-badge{width:30px;height:30px;background:#E8751A;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;font-family:serif;}
+.logo-link{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;color:inherit;}
+.logo-link:hover .logo-badge{background:#d4661a;}
 .logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em;}
 .logo-sub{font-size:11px;color:var(--text3);margin-top:-2px;}
 .nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;}
@@ -225,13 +227,13 @@ tr:hover td{background:var(--bg);}
 
 <div class="header">
   <div class="header-inner">
-    <div class="logo">
-      <div class="logo-badge">惟</div>
+    <a class="logo logo-link" onclick="switchTab('add')" href="javascript:void(0)">
+      <div class="logo-badge">帳</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
         <div class="logo-sub">採購帳務系統 v4.7 ☁</div>
       </div>
-    </div>
+    </a>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
       <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);">
         <span class="sync-dot" id="sync-dot"></span>
