@@ -229,7 +229,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">惟</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.3 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.4 ☁</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -633,11 +633,18 @@ async function insertOrder(o) {
 
 // ── 更新一筆訂單（僅狀態，不重建品項）────────────────
 async function updateOrderStatus(id, status, paidDate) {
-  await sbFetch('orders?id=eq.' + id, {
+  const url = 'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/orders?id=eq.' + id;
+  const res = await fetch(url, {
     method: 'PATCH',
-    prefer: 'return=minimal',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
     body: JSON.stringify({ status, paid_date: paidDate || '' })
   });
+  if (!res.ok) throw new Error('PATCH 失敗 HTTP ' + res.status + ': ' + await res.text());
 }
 async function updateOrder(o) {
   await sbFetch('orders?id=eq.' + o.id, {
@@ -2062,8 +2069,22 @@ function calcExpectedDate(sendDate) {
 }
 
 async function loadCodRecords() {
+  const url = 'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/cod_records?select=id,send_date,recipient,tracking,amount,note,expected_date,collected,collected_date,actual_amount&order=send_date.desc';
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json'
+  };
+
+  // 加 8 秒 timeout
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   try {
-    const data = await sbFetch('cod_records?select=*&order=send_date.desc');
+    const res = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    const data = await res.json();
     return (data || []).map(r => ({
       id: r.id,
       sendDate: r.send_date,
@@ -2077,24 +2098,8 @@ async function loadCodRecords() {
       actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null
     }));
   } catch(e) {
-    // 第一次失敗，嘗試不含 actual_amount
-    try {
-      const data = await sbFetch('cod_records?select=id,send_date,recipient,tracking,amount,note,expected_date,collected,collected_date&order=send_date.desc');
-      return (data || []).map(r => ({
-        id: r.id,
-        sendDate: r.send_date,
-        recipient: r.recipient,
-        tracking: r.tracking,
-        amount: Number(r.amount),
-        note: r.note || '',
-        expectedDate: r.expected_date || '',
-        collected: r.collected || false,
-        collectedDate: r.collected_date || '',
-        actualAmount: null
-      }));
-    } catch(e2) {
-      throw new Error(`COD載入失敗: ${e2.message}`);
-    }
+    clearTimeout(timer);
+    throw new Error(e.name === 'AbortError' ? 'COD 載入逾時（8秒）' : 'COD 載入失敗: ' + e.message);
   }
 }
 
