@@ -229,7 +229,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">惟</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.4 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.5 ☁</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -1958,55 +1958,71 @@ async function forceResync() {
   toast('✓ 同步完成');
 }
 
+
 // ── 批次標記付款 ──────────────────────────────────────
 
 async function batchMarkPaid() {
   const ym = document.getElementById('monthly-month').value;
   if (!ym) { alert('請先選擇月份並查詢'); return; }
-
-  if (!supabaseReady) {
-    alert('目前為離線模式，無法批次更新。請確認網路連線後重新整理頁面再試。');
-    return;
-  }
+  if (!supabaseReady) { alert('目前為離線模式，無法批次更新'); return; }
 
   const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
   if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
 
-  const unpaidVendors = [...new Set(unpaidList.map(o => o.vendor))];
-  const total = unpaidList.reduce((s,o) => s+o.total, 0);
-
+  const total = unpaidList.reduce((s, o) => s + o.total, 0);
   const confirmed = confirm(
-    `【本月全數標記付款】\n\n` +
-    `月份：${ym}\n` +
-    `未付款筆數：${unpaidList.length} 筆\n` +
-    `未付款總額：$${total.toLocaleString()}\n` +
-    `廠商共 ${unpaidVendors.length} 家\n\n` +
-    `確定要將本月所有未付款訂單標記為已付款嗎？`
+    '【本月全數標記付款】\n\n' +
+    '月份：' + ym + '\n' +
+    '未付款筆數：' + unpaidList.length + ' 筆\n' +
+    '未付款總額：$' + total.toLocaleString() + '\n\n' +
+    '確定要標記為已付款嗎？'
   );
   if (!confirmed) return;
 
   const paidDate = prompt('請輸入付款日期：', today());
-  if (!paidDate) return;
+  if (!paidDate || !paidDate.trim()) return;
 
-  const toUpdate = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
   const btn = document.querySelector('.btn-success.no-print');
   if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
 
-  let doneCount = 0;
-  try {
-    for (const o of toUpdate) {
-      await updateOrderStatus(o.id, 'paid', paidDate);
-      o.status = 'paid';
-      o.paidDate = paidDate;
-      doneCount++;
+  let done = 0, failed = 0;
+  for (const o of unpaidList) {
+    try {
+      const res = await fetch(
+        'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/orders?id=eq.' + o.id,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ status: 'paid', paid_date: paidDate.trim() })
+        }
+      );
+      if (res.ok) {
+        o.status = 'paid';
+        o.paidDate = paidDate.trim();
+        done++;
+      } else {
+        const errText = await res.text();
+        console.error('PATCH failed', o.id, res.status, errText);
+        failed++;
+      }
+    } catch (e) {
+      console.error('PATCH error', o.id, e);
+      failed++;
     }
-    renderOrders();
-    renderMonthly();
-    toast(`✓ 已標記 ${doneCount} 筆訂單為已付款`);
-  } catch(e) {
-    alert(`標記失敗（已完成 ${doneCount}/${toUpdate.length} 筆）：${e.message}`);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
+  renderOrders();
+  renderMonthly();
+  if (failed > 0) {
+    alert('完成：' + done + ' 筆成功，' + failed + ' 筆失敗，請查看 F12 Console 了解詳情');
+  } else {
+    toast('✓ 已標記 ' + done + ' 筆訂單為已付款');
   }
 }
 
@@ -2015,126 +2031,97 @@ async function batchMarkVendorPaid(vendor) {
   if (!unpaidList.length) { toast('此廠商已無未付款訂單'); return; }
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
-
   const confirmed = confirm(
-    `【標記廠商全部付清】\n\n` +
-    `廠商：${vendor}\n` +
-    `未付款筆數：${unpaidList.length} 筆\n` +
-    `未付款總額：$${total.toLocaleString()}\n\n` +
-    `確定要將此廠商所有未付款訂單標記為已付款嗎？`
+    '【標記廠商全部付清】\n\n' +
+    '廠商：' + vendor + '\n' +
+    '未付款筆數：' + unpaidList.length + ' 筆\n' +
+    '未付款總額：$' + total.toLocaleString() + '\n\n' +
+    '確定要標記為已付款嗎？'
   );
   if (!confirmed) return;
 
   const paidDate = prompt('請輸入付款日期：', today());
-  if (!paidDate) return;
+  if (!paidDate || !paidDate.trim()) return;
 
-  try {
-    for (const o of unpaidList) {
-      await updateOrderStatus(o.id, 'paid', paidDate);
-      o.status = 'paid';
-      o.paidDate = paidDate;
+  let done = 0, failed = 0;
+  for (const o of unpaidList) {
+    try {
+      const res = await fetch(
+        'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/orders?id=eq.' + o.id,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ status: 'paid', paid_date: paidDate.trim() })
+        }
+      );
+      if (res.ok) {
+        o.status = 'paid';
+        o.paidDate = paidDate.trim();
+        done++;
+      } else {
+        failed++;
+      }
+    } catch (e) {
+      failed++;
     }
-    renderOrders();
-    renderVendorContent();
-    renderVendorTotalCard();
-    renderVendorTabs();
-    toast(`✓ ${vendor} 共 ${unpaidList.length} 筆已標記付清`);
-  } catch(e) {
-    alert('標記失敗：' + e.message);
+  }
+
+  renderOrders();
+  renderVendorContent();
+  renderVendorTotalCard();
+  renderVendorTabs();
+  if (failed > 0) {
+    alert('完成：' + done + ' 筆成功，' + failed + ' 筆失敗');
+  } else {
+    toast('✓ ' + vendor + ' 共 ' + done + ' 筆已標記付清');
   }
 }
 
 // ── 貨到付款查帳 ──────────────────────────────────────
-// ── 貨到付款查帳 ──────────────────────────────────────
 
-// 計算預計入帳日：寄件日+1=收件日
-// 收件日週一~週四 → 下週二
-// 收件日週五~週日（週末）→ 下下週二
 function calcExpectedDate(sendDate) {
   const d = new Date(sendDate);
-  d.setDate(d.getDate() + 1); // 收件日
-  const dow = d.getDay(); // 0=日,1=一,2=二,...,6=六
-
-  // 先找到下一個週二
+  d.setDate(d.getDate() + 1);
+  const dow = d.getDay();
   let daysToNextTue = (2 - dow + 7) % 7;
-  if (daysToNextTue === 0) daysToNextTue = 7; // 收件日本身是週二，跳到下週二
-
-  // 收件日是週五(5)、週六(6)、週日(0) → 再加一週
-  if (dow === 5 || dow === 6 || dow === 0) {
-    daysToNextTue += 7;
-  }
-
+  if (daysToNextTue === 0) daysToNextTue = 7;
+  if (dow === 5 || dow === 6 || dow === 0) daysToNextTue += 7;
   d.setDate(d.getDate() + daysToNextTue);
   return d.toISOString().slice(0, 10);
 }
 
-async function loadCodRecords() {
-  const url = 'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/cod_records?select=id,send_date,recipient,tracking,amount,note,expected_date,collected,collected_date,actual_amount&order=send_date.desc';
+async function _codFetch(path, options) {
+  const base = 'https://lkryumerfbqfwfyxegve.supabase.co/rest/v1/';
   const headers = {
     'apikey': SUPABASE_ANON_KEY,
     'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Prefer': (options && options.prefer) || 'return=minimal'
   };
-
-  // 加 8 秒 timeout
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-
-  try {
-    const res = await fetch(url, { headers, signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
-    const data = await res.json();
-    return (data || []).map(r => ({
-      id: r.id,
-      sendDate: r.send_date,
-      recipient: r.recipient,
-      tracking: r.tracking,
-      amount: Number(r.amount),
-      note: r.note || '',
-      expectedDate: r.expected_date || '',
-      collected: r.collected || false,
-      collectedDate: r.collected_date || '',
-      actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null
-    }));
-  } catch(e) {
-    clearTimeout(timer);
-    throw new Error(e.name === 'AbortError' ? 'COD 載入逾時（8秒）' : 'COD 載入失敗: ' + e.message);
-  }
+  const res = await fetch(base + path, Object.assign({}, options, { headers }));
+  if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
-async function saveCodRecord(rec) {
-  await sbFetch('cod_records', {
-    method: 'POST',
-    prefer: 'return=minimal',
-    body: JSON.stringify({
-      id: rec.id,
-      send_date: rec.sendDate,
-      recipient: rec.recipient,
-      tracking: rec.tracking,
-      amount: rec.amount,
-      note: rec.note || '',
-      expected_date: rec.expectedDate || '',
-      collected: rec.collected || false,
-      collected_date: rec.collectedDate || '',
-      actual_amount: rec.actualAmount != null ? rec.actualAmount : null
-    })
-  });
-}
-
-async function updateCodRecord(id, patch) {
-  await sbFetch('cod_records?id=eq.' + id, {
-    method: 'PATCH',
-    prefer: 'return=minimal',
-    body: JSON.stringify(patch)
-  });
-}
-
-async function deleteCodFromDB(id) {
-  await sbFetch('cod_records?id=eq.' + id, {
-    method: 'DELETE',
-    prefer: 'return=minimal'
-  });
+function _mapCod(r) {
+  return {
+    id: r.id,
+    sendDate: r.send_date,
+    recipient: r.recipient,
+    tracking: r.tracking,
+    amount: Number(r.amount),
+    note: r.note || '',
+    expectedDate: r.expected_date || '',
+    collected: !!r.collected,
+    collectedDate: r.collected_date || '',
+    actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null
+  };
 }
 
 function initCodDate() {
@@ -2157,17 +2144,24 @@ async function addCodRecord() {
   const expectedDate = calcExpectedDate(sendDate);
   const rec = {
     id: Date.now().toString(),
-    sendDate, recipient, tracking, amount, note,
-    expectedDate,
+    send_date: sendDate,
+    recipient,
+    tracking,
+    amount,
+    note,
+    expected_date: expectedDate,
     collected: false,
-    collectedDate: ''
+    collected_date: ''
   };
 
   const btn = document.querySelector('#sec-cod .btn-primary');
   if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
 
   try {
-    await saveCodRecord(rec);
+    await _codFetch('cod_records', {
+      method: 'POST',
+      body: JSON.stringify(rec)
+    });
     document.getElementById('cod-recipient').value = '';
     document.getElementById('cod-tracking').value = '';
     document.getElementById('cod-amount').value = '';
@@ -2175,7 +2169,7 @@ async function addCodRecord() {
     document.getElementById('cod-send-date').value = today();
     await renderCodList();
     toast('✓ 代收款記錄已新增，預計入帳日：' + expectedDate);
-  } catch(e) {
+  } catch (e) {
     alert('儲存失敗：' + e.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '新增記錄'; }
@@ -2183,50 +2177,35 @@ async function addCodRecord() {
 }
 
 async function confirmCodCollected(id) {
-  const records = await loadCodRecords();
-  const rec = records.find(r => r.id === id);
-  if (!rec) return;
-
   const date = prompt('請輸入入帳日期：', today());
   if (date === null) return;
   if (!date.trim()) { alert('請填寫入帳日期'); return; }
 
-  const actualInput = prompt(`請輸入實際到帳金額：\n（原始收款金額：$${rec.amount.toLocaleString()}）`, rec.amount);
-  if (actualInput === null) return;
-  const actualAmount = parseFloat(actualInput) || rec.amount;
+  const amtStr = prompt('請輸入實際到帳金額：', '');
+  if (amtStr === null) return;
+
+  const patch = { collected: true, collected_date: date.trim() };
+  if (amtStr.trim()) patch.actual_amount = parseFloat(amtStr) || 0;
 
   try {
-    // 先嘗試含 actual_amount 欄位更新
-    await updateCodRecord(id, {
-      collected: true,
-      collected_date: date.trim(),
-      actual_amount: actualAmount
+    await _codFetch('cod_records?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify(patch)
     });
-  } catch(e) {
-    // 如果 actual_amount 欄位不存在，退而只更新基本欄位
-    try {
-      await updateCodRecord(id, {
-        collected: true,
-        collected_date: date.trim()
-      });
-    } catch(e2) {
-      alert('更新失敗：' + e2.message);
-      return;
-    }
+    await renderCodList();
+    toast('✓ 已確認到帳');
+  } catch (e) {
+    alert('更新失敗：' + e.message);
   }
-  await renderCodList();
-  const diff = actualAmount - rec.amount;
-  const diffText = diff !== 0 ? `（差額 ${diff > 0 ? '+' : ''}$${diff.toLocaleString()}）` : '';
-  toast(`✓ 已確認到帳 $${actualAmount.toLocaleString()} ${diffText}`);
 }
 
 async function deleteCodRecord(id) {
   if (!confirm('確定刪除這筆記錄？')) return;
   try {
-    await deleteCodFromDB(id);
+    await _codFetch('cod_records?id=eq.' + id, { method: 'DELETE' });
     await renderCodList();
     toast('已刪除');
-  } catch(e) {
+  } catch (e) {
     alert('刪除失敗：' + e.message);
   }
 }
@@ -2236,118 +2215,107 @@ async function renderCodList() {
   if (!container) return;
   container.innerHTML = '<div style="padding:1rem;color:var(--text3);font-size:13px;">載入中…</div>';
 
-  let all = [];
   try {
-    all = await loadCodRecords();
-  } catch(e) {
-    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;">載入失敗：${e.message}</div>`;
-    return;
-  }
+    const data = await _codFetch('cod_records?select=*&order=send_date.desc');
+    const all = (data || []).map(_mapCod);
 
-  const showUncollectedOnly = document.getElementById('cod-show-uncollected')?.checked;
-  const records = showUncollectedOnly ? all.filter(r => !r.collected) : all;
+    if (all.length === 0) {
+      container.innerHTML = '<div class="empty">尚無代收款記錄</div>';
+      return;
+    }
 
-  const todayStr = today();
-  const overdue  = all.filter(r => !r.collected && r.expectedDate && r.expectedDate <= todayStr);
-  const totalUncollected = all.filter(r => !r.collected).reduce((s, r) => s + r.amount, 0);
-  const uncollectedCount = all.filter(r => !r.collected).length;
+    const showUncollected = document.getElementById('cod-show-uncollected')?.checked;
+    const records = showUncollected ? all.filter(r => !r.collected) : all;
+    const todayStr = today();
+    const overdue = all.filter(r => !r.collected && r.expectedDate && r.expectedDate <= todayStr);
+    const totalUncollected = all.filter(r => !r.collected).reduce((s, r) => s + r.amount, 0);
+    const uncollectedCount = all.filter(r => !r.collected).length;
 
-  if (all.length === 0) {
-    container.innerHTML = '<div class="empty">尚無代收款記錄</div>';
-    return;
-  }
+    const overdueHTML = overdue.length > 0 ? `
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:13px;">
+        <div style="font-weight:600;color:#856404;margin-bottom:.35rem;">⚠️ ${overdue.length} 筆款項已超過預計到帳日</div>
+        ${overdue.map(r => `<div style="color:#856404;font-size:12px;margin-top:2px;">・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}</div>`).join('')}
+      </div>` : '';
 
-  try {
+    const statsHTML = `
+      ${overdueHTML}
+      <div style="display:flex;gap:1.5rem;padding:.75rem 1rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;font-size:13px;">
+        <div><span style="color:var(--text3);">待到帳筆數　</span><span style="font-weight:600;color:var(--amber);">${uncollectedCount} 筆</span></div>
+        <div><span style="color:var(--text3);">待到帳總額　</span><span style="font-weight:600;color:var(--amber);">$${totalUncollected.toLocaleString()}</span></div>
+      </div>`;
 
-  // 逾期提醒區
-  const overdueHTML = overdue.length > 0 ? `
-    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:13px;">
-      <div style="font-weight:600;color:#856404;margin-bottom:.35rem;">⚠️ ${overdue.length} 筆款項已超過預計到帳日，請確認是否已入帳</div>
-      ${overdue.map(r => `<div style="color:#856404;font-size:12px;margin-top:2px;">・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}</div>`).join('')}
-    </div>` : '';
+    if (records.length === 0) {
+      container.innerHTML = statsHTML + '<div class="empty">所有款項均已到帳 ✓</div>';
+      return;
+    }
 
-  const statsHTML = `
-    ${overdueHTML}
-    <div style="display:flex;gap:1.5rem;padding:.75rem 1rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;font-size:13px;">
-      <div><span style="color:var(--text3);">待到帳筆數　</span><span style="font-weight:600;color:var(--amber);">${uncollectedCount} 筆</span></div>
-      <div><span style="color:var(--text3);">待到帳總額　</span><span style="font-weight:600;color:var(--amber);">$${totalUncollected.toLocaleString()}</span></div>
-    </div>`;
+    const rows = records.map(r => {
+      const isOverdue = !r.collected && r.expectedDate && r.expectedDate <= todayStr;
+      const actual = r.actualAmount != null ? r.actualAmount : null;
+      const collectedLabel = r.collected
+        ? (() => {
+            const showAmt = actual != null ? actual : r.amount;
+            const diff = actual != null ? actual - r.amount : 0;
+            const diffStr = diff !== 0
+              ? ` <span style="color:${diff<0?'#e53e3e':'var(--green)'};">(${diff>0?'+':''}$${diff.toLocaleString()})</span>`
+              : '';
+            return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${showAmt.toLocaleString()}${diffStr}</div>
+                    <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
+          })()
+        : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`;
 
-  if (records.length === 0) {
-    container.innerHTML = statsHTML + '<div class="empty">所有款項均已到帳 ✓</div>';
-    return;
-  }
+      return `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--border);${r.collected?'opacity:.5;':''}${isOverdue?'background:rgba(255,193,7,.06);':''}">
+          <div>
+            <div style="font-size:12px;color:var(--text3);">寄件日</div>
+            <div style="font-size:13px;font-weight:500;">${r.sendDate}</div>
+            ${r.expectedDate ? `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--text3)'};margin-top:2px;">預計入帳 ${r.expectedDate}</div>` : ''}
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text3);">收件人</div>
+            <div style="font-size:13px;font-weight:500;">${r.recipient}</div>
+            ${r.note ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${r.note}</div>` : ''}
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text3);">物流編號</div>
+            <div style="font-size:13px;font-family:monospace;">${r.tracking}</div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text3);">收款金額</div>
+            <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
+            ${collectedLabel}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+            ${!r.collected ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認到帳</button>` : ''}
+            <button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>
+          </div>
+        </div>`;
+    }).join('');
 
-  const rows = records.map(r => {
-    const isOverdue = !r.collected && r.expectedDate && r.expectedDate <= todayStr;
-    return `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--border);${r.collected ? 'opacity:.5;' : ''}${isOverdue ? 'background:rgba(255,193,7,.06);' : ''}">
-      <div>
-        <div style="font-size:12px;color:var(--text3);">寄件日</div>
-        <div style="font-size:13px;font-weight:500;">${r.sendDate}</div>
-        ${r.expectedDate ? `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--text3)'};margin-top:2px;">預計入帳 ${r.expectedDate}</div>` : ''}
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--text3);">收件人</div>
-        <div style="font-size:13px;font-weight:500;">${r.recipient}</div>
-        ${r.note ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${r.note}</div>` : ''}
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--text3);">物流編號</div>
-        <div style="font-size:13px;font-family:monospace;">${r.tracking}</div>
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--text3);">收款金額</div>
-        <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
-        ${r.collected
-          ? codCollectedLabel(r)
-          : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-        ${!r.collected
-          ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認到帳</button>`
-          : ''}
-        <button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>
-      </div>
-    </div>`;
-  }).join('');
+    container.innerHTML = statsHTML + `
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">${rows}</div>`;
 
-  container.innerHTML = statsHTML + `
-    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-      ${rows}
-    </div>`;
-  } catch(e) {
-    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;">顯示錯誤：${e.message}</div>`;
+  } catch (e) {
+    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;font-weight:500;">❌ 載入失敗：${e.message}</div>`;
   }
 }
 
-function codCollectedLabel(r) {
-  const actual = r.actualAmount != null ? r.actualAmount : r.amount;
-  const diff = actual - r.amount;
-  const diffText = diff !== 0
-    ? `<span style="color:${diff<0?'#e53e3e':'var(--green)'};">（${diff>0?'+':''}$${diff.toLocaleString()}）</span>`
-    : '';
-  return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${actual.toLocaleString()} ${diffText}</div>
-          <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
-}
 async function checkCodAlert() {
   try {
-    const all = await loadCodRecords();
+    const data = await _codFetch('cod_records?select=id,recipient,amount,expected_date,collected&order=send_date.desc');
+    const all = (data || []).map(_mapCod);
     const todayStr = today();
     const overdue = all.filter(r => !r.collected && r.expectedDate && r.expectedDate <= todayStr);
     if (overdue.length === 0) return;
 
     const totalAmt = overdue.reduce((s, r) => s + r.amount, 0);
-    const lines = overdue.map(r => `・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}`).join('\n');
-
-    // 建立提醒 Modal
     const div = document.createElement('div');
     div.id = 'cod-alert-modal';
     div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:center;justify-content:center;';
     div.innerHTML = `
       <div style="background:#fff;border-radius:14px;padding:2rem;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.3);">
         <div style="font-size:18px;font-weight:700;margin-bottom:.5rem;">⚠️ 貨到付款到帳提醒</div>
-        <div style="font-size:13px;color:#666;margin-bottom:1.25rem;">以下 ${overdue.length} 筆款項已超過預計入帳日，共 <strong>$${totalAmt.toLocaleString()}</strong>，請確認是否已入帳：</div>
+        <div style="font-size:13px;color:#666;margin-bottom:1.25rem;">以下 ${overdue.length} 筆款項已超過預計入帳日，共 <strong>$${totalAmt.toLocaleString()}</strong></div>
         <div style="background:#fff8e1;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.25rem;font-size:13px;line-height:2;">
           ${overdue.map(r => `<div>・<strong>${r.recipient}</strong>　$${r.amount.toLocaleString()}　<span style="color:#999;">預計 ${r.expectedDate}</span></div>`).join('')}
         </div>
@@ -2357,10 +2325,12 @@ async function checkCodAlert() {
         </div>
       </div>`;
     document.body.appendChild(div);
-  } catch(e) {
-    // 靜默失敗，不影響主系統
+  } catch (e) {
+    // 靜默失敗
   }
 }
+
+
 
 // ── 啟動 ──────────────────────────────────────────────
 (async () => {
