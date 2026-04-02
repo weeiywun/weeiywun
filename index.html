@@ -2001,7 +2001,7 @@ async function executeBatchMarkPaid(ym) {
 
   if (!toUpdate.length) { alert('沒有需要標記的訂單（全部都被排除了）'); return; }
 
-  const btn = document.querySelector('#batch-pay-modal .btn-success');
+  const btn = document.getElementById('batch-pay-confirm-btn');
   if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
 
   try {
@@ -2326,15 +2326,7 @@ async function renderCodList() {
         <div style="font-size:12px;color:var(--text3);">收款金額</div>
         <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
         ${r.collected
-          ? (() => {
-              const actual = r.actualAmount != null ? r.actualAmount : r.amount;
-              const diff = actual - r.amount;
-              const diffText = diff !== 0
-                ? `<span style="color:${diff<0?'#e53e3e':'var(--green)'};">（${diff>0?'+':''}$${diff.toLocaleString()}）</span>`
-                : '';
-              return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${actual.toLocaleString()} ${diffText}</div>
-                      <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
-            })()
+          ? codCollectedLabel(r)
           : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
@@ -2352,7 +2344,15 @@ async function renderCodList() {
     </div>`;
 }
 
-// 進入系統時檢查逾期 COD，有則彈出提醒
+function codCollectedLabel(r) {
+  const actual = r.actualAmount != null ? r.actualAmount : r.amount;
+  const diff = actual - r.amount;
+  const diffText = diff !== 0
+    ? `<span style="color:${diff<0?'#e53e3e':'var(--green)'};">（${diff>0?'+':''}$${diff.toLocaleString()}）</span>`
+    : '';
+  return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${actual.toLocaleString()} ${diffText}</div>
+          <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
+}
 async function checkCodAlert() {
   try {
     const all = await loadCodRecords();
