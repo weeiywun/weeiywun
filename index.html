@@ -1953,55 +1953,26 @@ async function batchMarkPaid() {
   const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
   if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
 
-  // 列出有未付款的廠商，供排除勾選
   const unpaidVendors = [...new Set(unpaidList.map(o => o.vendor))];
-  const vendorCheckboxes = unpaidVendors.map(v => `
-    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-      <input type="checkbox" class="batch-exclude-cb" value="${v}" style="width:16px;height:16px;">
-      <span style="font-size:13px;">${v}</span>
-      <span style="font-size:12px;color:var(--text3);margin-left:auto;">${unpaidList.filter(o=>o.vendor===v).length} 筆　$${unpaidList.filter(o=>o.vendor===v).reduce((s,o)=>s+o.total,0).toLocaleString()}</span>
-    </label>`).join('');
+  const total = unpaidList.reduce((s,o) => s+o.total, 0);
 
-  // 建立確認 Modal
-  const div = document.createElement('div');
-  div.id = 'batch-pay-modal';
-  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:center;justify-content:center;';
-  div.innerHTML = `
-    <div style="background:var(--surface);border-radius:14px;padding:2rem;width:460px;max-width:92vw;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-      <div style="font-size:17px;font-weight:700;margin-bottom:.35rem;">本月全數標記付款</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;">共 ${unpaidList.length} 筆未付款訂單，請選擇付款日期。<br>若有廠商需延後付款，請勾選排除。</div>
-      <div class="form-group" style="margin-bottom:1.25rem;">
-        <label>付款日期</label>
-        <input type="date" id="batch-pay-date" value="${today()}" style="width:180px;">
-      </div>
-      <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:.5rem;">勾選要排除的廠商（不標記付款）：</div>
-      <div style="margin-bottom:1.25rem;">${vendorCheckboxes}</div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="document.getElementById('batch-pay-modal').remove()" class="btn">取消</button>
-        <button id="batch-pay-confirm-btn" class="btn btn-success">確認標記付款</button>
-      </div>
-    </div>`;
-  document.body.appendChild(div);
-  document.getElementById('batch-pay-confirm-btn').addEventListener('click', () => executeBatchMarkPaid(ym));
-}
-
-async function executeBatchMarkPaid(ym) {
-  const paidDate = document.getElementById('batch-pay-date').value;
-  if (!paidDate) { alert('請選擇付款日期'); return; }
-
-  const excludedVendors = new Set(
-    [...document.querySelectorAll('.batch-exclude-cb:checked')].map(cb => cb.value)
+  // 簡單確認
+  const confirmed = confirm(
+    `【本月全數標記付款】\n\n` +
+    `月份：${ym}\n` +
+    `未付款筆數：${unpaidList.length} 筆\n` +
+    `未付款總額：$${total.toLocaleString()}\n` +
+    `廠商共 ${unpaidVendors.length} 家\n\n` +
+    `確定要將本月所有未付款訂單標記為已付款嗎？`
   );
+  if (!confirmed) return;
 
-  const toUpdate = orders.filter(o =>
-    o.date.startsWith(ym) &&
-    o.status === 'pending' &&
-    !excludedVendors.has(o.vendor)
-  );
+  const paidDate = prompt('請輸入付款日期：', today());
+  if (!paidDate) return;
 
-  if (!toUpdate.length) { alert('沒有需要標記的訂單（全部都被排除了）'); return; }
+  const toUpdate = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
 
-  const btn = document.getElementById('batch-pay-confirm-btn');
+  const btn = document.querySelector('.btn-success.no-print');
   if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
 
   try {
@@ -2010,13 +1981,13 @@ async function executeBatchMarkPaid(ym) {
       o.paidDate = paidDate;
       await persist(o, 'update');
     }
-    document.getElementById('batch-pay-modal').remove();
     renderOrders();
     renderMonthly();
-    toast(`✓ 已標記 ${toUpdate.length} 筆訂單為已付款${excludedVendors.size > 0 ? `（排除 ${excludedVendors.size} 家廠商）` : ''}`);
+    toast(`✓ 已標記 ${toUpdate.length} 筆訂單為已付款`);
   } catch(e) {
     alert('標記失敗：' + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = '確認標記付款'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
   }
 }
 
@@ -2026,52 +1997,31 @@ async function batchMarkVendorPaid(vendor) {
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
 
-  const div = document.createElement('div');
-  div.id = 'vendor-batch-pay-modal';
-  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:center;justify-content:center;';
-  div.innerHTML = `
-    <div style="background:var(--surface);border-radius:14px;padding:2rem;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-      <div style="font-size:17px;font-weight:700;margin-bottom:.35rem;">標記廠商全部付清</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;">
-        <strong>${vendor}</strong>　共 ${unpaidList.length} 筆　$${total.toLocaleString()}
-      </div>
-      <div class="form-group" style="margin-bottom:1.25rem;">
-        <label>付款日期</label>
-        <input type="date" id="vendor-batch-pay-date" value="${today()}" style="width:180px;">
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="document.getElementById('vendor-batch-pay-modal').remove()" class="btn">取消</button>
-        <button id="vendor-batch-pay-confirm-btn" class="btn btn-success">確認付清</button>
-      </div>
-    </div>`;
-  document.body.appendChild(div);
-  // 用事件綁定避開引號問題
-  document.getElementById('vendor-batch-pay-confirm-btn').addEventListener('click', () => executeVendorBatchPaid(vendor));
-}
+  const confirmed = confirm(
+    `【標記廠商全部付清】\n\n` +
+    `廠商：${vendor}\n` +
+    `未付款筆數：${unpaidList.length} 筆\n` +
+    `未付款總額：$${total.toLocaleString()}\n\n` +
+    `確定要將此廠商所有未付款訂單標記為已付款嗎？`
+  );
+  if (!confirmed) return;
 
-async function executeVendorBatchPaid(vendor) {
-  const paidDate = document.getElementById('vendor-batch-pay-date').value;
-  if (!paidDate) { alert('請選擇付款日期'); return; }
-
-  const toUpdate = orders.filter(o => o.vendor === vendor && o.status === 'pending');
-  const btn = document.querySelector('#vendor-batch-pay-modal .btn-success');
-  if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
+  const paidDate = prompt('請輸入付款日期：', today());
+  if (!paidDate) return;
 
   try {
-    for (const o of toUpdate) {
+    for (const o of unpaidList) {
       o.status = 'paid';
       o.paidDate = paidDate;
       await persist(o, 'update');
     }
-    document.getElementById('vendor-batch-pay-modal').remove();
     renderOrders();
     renderVendorContent();
     renderVendorTotalCard();
     renderVendorTabs();
-    toast(`✓ ${vendor} 共 ${toUpdate.length} 筆已標記付清`);
+    toast(`✓ ${vendor} 共 ${unpaidList.length} 筆已標記付清`);
   } catch(e) {
     alert('標記失敗：' + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = '確認付清'; }
   }
 }
 
@@ -2271,7 +2221,14 @@ async function renderCodList() {
   if (!container) return;
   container.innerHTML = '<div style="padding:1rem;color:var(--text3);font-size:13px;">載入中…</div>';
 
-  const all = await loadCodRecords();
+  let all = [];
+  try {
+    all = await loadCodRecords();
+  } catch(e) {
+    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;">載入失敗：${e.message}</div>`;
+    return;
+  }
+
   const showUncollectedOnly = document.getElementById('cod-show-uncollected')?.checked;
   const records = showUncollectedOnly ? all.filter(r => !r.collected) : all;
 
@@ -2284,6 +2241,8 @@ async function renderCodList() {
     container.innerHTML = '<div class="empty">尚無代收款記錄</div>';
     return;
   }
+
+  try {
 
   // 逾期提醒區
   const overdueHTML = overdue.length > 0 ? `
@@ -2342,6 +2301,9 @@ async function renderCodList() {
     <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
       ${rows}
     </div>`;
+  } catch(e) {
+    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;">顯示錯誤：${e.message}</div>`;
+  }
 }
 
 function codCollectedLabel(r) {
