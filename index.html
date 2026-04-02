@@ -488,7 +488,7 @@ async function batchMarkPaid() {
   if (!supabaseReady) { alert('目前為離線模式，無法批次更新'); return; }
 
   const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
-  if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
+  if (!unpaidList.length) { alert('本月已無未付款訂單'); return; }
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
   const confirmed = confirm(`【本月全數標記付款】\n月份：${ym}\n未付款：${unpaidList.length} 筆\n總額：$${total.toLocaleString()}\n確定要標記嗎？`);
@@ -513,19 +513,33 @@ async function batchMarkPaid() {
         },
         body: JSON.stringify({ status: 'paid', paid_date: paidDate.trim() })
       });
+      
       if (res.ok) {
+        // 確保本地端的陣列也被更新
         o.status = 'paid';
         o.paidDate = paidDate.trim();
         done++;
-      } else { failed++; }
-    } catch (e) { failed++; }
+      } else {
+        console.error('更新失敗:', await res.text());
+        failed++;
+      }
+    } catch (e) { 
+      console.error('連線異常:', e);
+      failed++; 
+    }
   }
 
   if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
-  renderOrders();
-  renderMonthly();
-  if (failed > 0) alert(`完成：${done} 筆成功，${failed} 筆失敗`);
-  else toast(`✓ 已標記 ${done} 筆訂單為已付款`);
+  
+  // 強制重新渲染兩個畫面
+  if (typeof renderOrders === 'function') renderOrders();
+  if (typeof renderMonthly === 'function') renderMonthly();
+  
+  if (failed > 0) {
+    alert(`完成！成功：${done} 筆，失敗：${failed} 筆 (請按 F12 查看錯誤)`);
+  } else {
+    alert(`✅ 成功標記 ${done} 筆訂單為已付款！`);
+  }
 }
 
 // ── 貨到付款功能 (修復版) ──────────────────────────────
