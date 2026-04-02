@@ -229,7 +229,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">惟</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.1 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.3 ☁</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -394,7 +394,7 @@ tr:hover td{background:var(--bg);}
         <div style="font-size:13px;font-weight:500;color:var(--text2);">代收款記錄</div>
         <div style="display:flex;gap:8px;align-items:center;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
-            <input type="checkbox" id="cod-show-uncollected" onchange="renderCodList()" checked>
+            <input type="checkbox" id="cod-show-uncollected" onchange="renderCodList()">
             只顯示未到帳
           </label>
         </div>
@@ -631,7 +631,14 @@ async function insertOrder(o) {
   }
 }
 
-// ── 更新一筆訂單 ──────────────────────────────────────
+// ── 更新一筆訂單（僅狀態，不重建品項）────────────────
+async function updateOrderStatus(id, status, paidDate) {
+  await sbFetch('orders?id=eq.' + id, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify({ status, paid_date: paidDate || '' })
+  });
+}
 async function updateOrder(o) {
   await sbFetch('orders?id=eq.' + o.id, {
     method: 'PATCH',
@@ -1950,13 +1957,17 @@ async function batchMarkPaid() {
   const ym = document.getElementById('monthly-month').value;
   if (!ym) { alert('請先選擇月份並查詢'); return; }
 
+  if (!supabaseReady) {
+    alert('目前為離線模式，無法批次更新。請確認網路連線後重新整理頁面再試。');
+    return;
+  }
+
   const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
   if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
 
   const unpaidVendors = [...new Set(unpaidList.map(o => o.vendor))];
   const total = unpaidList.reduce((s,o) => s+o.total, 0);
 
-  // 簡單確認
   const confirmed = confirm(
     `【本月全數標記付款】\n\n` +
     `月份：${ym}\n` +
@@ -1971,21 +1982,22 @@ async function batchMarkPaid() {
   if (!paidDate) return;
 
   const toUpdate = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
-
   const btn = document.querySelector('.btn-success.no-print');
   if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
 
+  let doneCount = 0;
   try {
     for (const o of toUpdate) {
+      await updateOrderStatus(o.id, 'paid', paidDate);
       o.status = 'paid';
       o.paidDate = paidDate;
-      await persist(o, 'update');
+      doneCount++;
     }
     renderOrders();
     renderMonthly();
-    toast(`✓ 已標記 ${toUpdate.length} 筆訂單為已付款`);
+    toast(`✓ 已標記 ${doneCount} 筆訂單為已付款`);
   } catch(e) {
-    alert('標記失敗：' + e.message);
+    alert(`標記失敗（已完成 ${doneCount}/${toUpdate.length} 筆）：${e.message}`);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
   }
@@ -2011,9 +2023,9 @@ async function batchMarkVendorPaid(vendor) {
 
   try {
     for (const o of unpaidList) {
+      await updateOrderStatus(o.id, 'paid', paidDate);
       o.status = 'paid';
       o.paidDate = paidDate;
-      await persist(o, 'update');
     }
     renderOrders();
     renderVendorContent();
@@ -2065,8 +2077,7 @@ async function loadCodRecords() {
       actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null
     }));
   } catch(e) {
-    console.error('COD 載入失敗', e);
-    // 如果是 actual_amount 欄位不存在，嘗試不含該欄位重新讀取
+    // 第一次失敗，嘗試不含 actual_amount
     try {
       const data = await sbFetch('cod_records?select=id,send_date,recipient,tracking,amount,note,expected_date,collected,collected_date&order=send_date.desc');
       return (data || []).map(r => ({
@@ -2082,8 +2093,7 @@ async function loadCodRecords() {
         actualAmount: null
       }));
     } catch(e2) {
-      console.error('COD 二次載入失敗', e2);
-      return [];
+      throw new Error(`COD載入失敗: ${e2.message}`);
     }
   }
 }
