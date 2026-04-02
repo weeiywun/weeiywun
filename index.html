@@ -2113,7 +2113,25 @@ async function loadCodRecords() {
     }));
   } catch(e) {
     console.error('COD 載入失敗', e);
-    return [];
+    // 如果是 actual_amount 欄位不存在，嘗試不含該欄位重新讀取
+    try {
+      const data = await sbFetch('cod_records?select=id,send_date,recipient,tracking,amount,note,expected_date,collected,collected_date&order=send_date.desc');
+      return (data || []).map(r => ({
+        id: r.id,
+        sendDate: r.send_date,
+        recipient: r.recipient,
+        tracking: r.tracking,
+        amount: Number(r.amount),
+        note: r.note || '',
+        expectedDate: r.expected_date || '',
+        collected: r.collected || false,
+        collectedDate: r.collected_date || '',
+        actualAmount: null
+      }));
+    } catch(e2) {
+      console.error('COD 二次載入失敗', e2);
+      return [];
+    }
   }
 }
 
