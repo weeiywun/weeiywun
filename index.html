@@ -550,4 +550,432 @@ async function renderCodList() {
   
   try {
     // 試圖抓取 cod_records (或 cod_record)
-    const data = await _codFetch('cod_records?select=*&
+    const data = await _codFetch('cod_records?select=*&order=send_date.desc');
+    
+    if (!data || !Array.isArray(data)) {
+        throw new Error("回傳資料格式錯誤或表格不存在");
+    }
+
+    const all = data.map(r => ({
+        id: r.id, 
+        sendDate: r.send_date || '-', 
+        recipient: r.recipient || '未知', 
+        tracking: r.tracking || '-', 
+        amount: Number(r.amount) || 0, 
+        note: r.note || '', 
+        expectedDate: r.expected_date || '', 
+        collected: !!r.collected, 
+        collectedDate: r.collected_date || '', 
+        actualAmount: r.actual_amount != null ? Number(r.actual_amount) : null 
+    }));
+
+    if (all.length === 0) { 
+        container.innerHTML = '<div class="empty">尚無代收款記錄</div>'; 
+        return; 
+    }
+
+    const showUncollected = document.getElementById('cod-show-uncollected')?.checked;
+    const records = showUncollected ? all.filter(r => !r.collected) : all;
+    const todayStr = today();
+    const totalUncollected = all.filter(r => !r.collected).reduce((s, r) => s + r.amount, 0);
+    
+    let statsHTML = `<div style="display:flex;gap:1.5rem;padding:.75rem 1rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;font-size:13px;">
+      <div><span style="color:var(--text3);">待到帳筆數 </span><span style="font-weight:600;color:var(--amber);">${all.filter(r=>!r.collected).length} 筆</span></div>
+      <div><span style="color:var(--text3);">待到帳總額 </span><span style="font-weight:600;color:var(--amber);">$${totalUncollected.toLocaleString()}</span></div>
+    </div>`;
+
+    const rows = records.map(r => {
+      const isOverdue = !r.collected && r.expectedDate && r.expectedDate <= todayStr;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--border);${r.collected?'opacity:.5;':''}${isOverdue?'background:rgba(255,193,7,.06);':''}">
+        <div><div style="font-size:12px;color:var(--text3);">寄件日</div><div>${r.sendDate}</div></div>
+        <div><div style="font-size:12px;color:var(--text3);">收件人</div><div>${r.recipient}</div></div>
+        <div><div style="font-size:12px;color:var(--text3);">物流編號</div><div class="mono">${r.tracking}</div></div>
+        <div><div style="font-size:12px;color:var(--text3);">金額</div><div style="font-weight:600;">$${r.amount.toLocaleString()}</div></div>
+        <div style="display:flex;gap:5px;">
+          ${!r.collected ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認</button>` : '<span style="color:var(--green);font-weight:600;padding:0 8px;">✓ 已收</span>'}
+          <button class="btn btn-sm" onclick="deleteCodRecord('${r.id}')">刪</button>
+        </div>
+      </div>`;
+    }).join('');
+    container.innerHTML = statsHTML + `<div style="border:1px solid var(--border);border-radius:10px;">${rows}</div>`;
+  } catch (e) { 
+    console.error(e);
+    container.innerHTML = `<div style="color:red;padding:1rem;">載入失敗：請確認 Supabase Table 名稱是否為 cod_records</div>`; 
+  }
+}
+
+async function addCodRecord() {
+  const sendDate = document.getElementById('cod-send-date').value;
+  const recipient = document.getElementById('cod-recipient').value.trim();
+  const tracking = document.getElementById('cod-tracking').value.trim();
+  const amount = parseFloat(document.getElementById('cod-amount').value) || 0;
+  const note = document.getElementById('cod-note').value.trim();
+  if (!sendDate || !recipient || !tracking || !amount) { alert('請填寫完整資訊'); return; }
+  const rec = { id: Date.now().toString(), send_date: sendDate, recipient, tracking, amount, collected: false, expected_date: calcExpectedDate(sendDate), note };
+  try {
+    await _codFetch('cod_records', { method: 'POST', body: JSON.stringify(rec) });
+    renderCodList(); toast('✓ 已新增紀錄');
+    document.getElementById('cod-recipient').value='';
+    document.getElementById('cod-tracking').value='';
+    document.getElementById('cod-amount').value='';
+    document.getElementById('cod-note').value='';
+  } catch(e) { alert(e.message); }
+}
+
+function calcExpectedDate(sendDate) {
+  const d = new Date(sendDate); d.setDate(d.getDate() + 2);
+  return d.toISOString().slice(0, 10);
+}
+
+async function confirmCodCollected(id) {
+  const date = prompt('入帳日期：', today());
+  if (!date) return;
+  try {
+    await _codFetch('cod_records?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ collected: true, collected_date: date.trim() }) });
+    renderCodList(); toast('✓ 已確認');
+  } catch(e) { alert(e.message); }
+}
+
+async function deleteCodRecord(id) {
+  if (!confirm('刪除？')) return;
+  try {
+    await _codFetch('cod_records?id=eq.' + id, { method: 'DELETE' });
+    renderCodList();
+  } catch(e) { alert(e.message); }
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-' + t).classList.add('active');
+  if (t === 'orders') renderOrders();
+  if (t === 'add' && document.querySelectorAll('.order-form-card').length === 0) addOrderForm();
+  if (t === 'monthly') renderMonthly();
+  if (t === 'vendors') renderVendors();
+  if (t === 'price') initPriceSearch();
+  if (t === 'cod') { renderCodList(); initCodDate(); }
+  window.scrollTo(0, 0);
+}
+
+function initCodDate() { document.getElementById('cod-send-date').value = today(); }
+
+function renderOrders() {
+  const fm = document.getElementById('filter-month').value;
+  const fv = document.getElementById('filter-vendor').value.toLowerCase();
+  const fid = document.getElementById('filter-orderid').value.toLowerCase();
+  const fi = document.getElementById('filter-item').value.toLowerCase();
+  const fs = document.getElementById('filter-status').value;
+  let list = orders.filter(o => {
+    if (fm && !o.date.startsWith(fm)) return false;
+    if (fv && !o.vendor.toLowerCase().includes(fv)) return false;
+    if (fid && !o.orderId.toLowerCase().includes(fid)) return false;
+    if (fs && o.status !== fs) return false;
+    if (fi) {
+      return o.items.some(it => it.name.toLowerCase().includes(fi));
+    }
+    return true;
+  }).sort((a, b) => b.date.localeCompare(a.date));
+  const tb = document.getElementById('orders-tbody');
+  tb.innerHTML = list.map(o => `
+    <tr class="order-row" onclick="showDetail('${o.id}')">
+      <td>${o.date}</td><td class="mono">${o.orderId||'—'}</td><td style="font-weight:500;">${o.vendor}</td>
+      <td>${o.items[0]?.name} 等 ${o.items.length} 項</td><td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+      <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付':'未付'}</span> ${o.type==='refund'?'<span class="refund-badge">退貨</span>':''}</td>
+      <td>${o.paidDate||'—'}</td>
+    </tr>`).join('');
+  renderSummary();
+}
+
+function renderSummary() {
+  const ym = document.getElementById('filter-month').value;
+  let list = ym ? orders.filter(o => o.date.startsWith(ym)) : orders;
+  const count = list.length;
+  const total = list.reduce((s, o) => s + o.total, 0);
+  const unpaid = list.filter(o => o.status === 'pending').reduce((s, o) => s + o.total, 0);
+  const html = `<div class="metric"><div class="metric-label">訂單筆數</div><div class="metric-value">${count}</div></div>
+    <div class="metric"><div class="metric-label">總金額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">未付款金額</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">連線狀態</div><div class="metric-value ok" style="font-size:15px;">${supabaseReady?'穩定':'離線'}</div></div>`;
+  document.getElementById('summary-cards').innerHTML = html;
+  if(document.getElementById('add-summary-cards')) document.getElementById('add-summary-cards').innerHTML = html;
+}
+
+function clearFilters() {
+  document.getElementById('filter-month').value = '';
+  document.getElementById('filter-vendor').value = '';
+  document.getElementById('filter-orderid').value = '';
+  document.getElementById('filter-item').value = '';
+  document.getElementById('filter-status').value = '';
+  renderOrders();
+}
+
+function showDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header">
+      <div><h3>${o.vendor}</h3><p style="font-size:12px;color:var(--text3);">${o.date} ${o.type==='refund'?'(退貨單)':''}</p></div>
+      <span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span>
+    </div>
+    <div class="detail-meta">
+      <div class="detail-meta-item"><span class="detail-meta-label">訂單編號</span><span class="detail-meta-value mono">${o.orderId||'—'}</span></div>
+      <div class="detail-meta-item"><span class="detail-meta-label">付款方式</span><span class="detail-meta-value">${o.payMethod||'未註記'}</span></div>
+      <div class="detail-meta-item"><span class="detail-meta-label">付款日期</span><span class="detail-meta-value">${o.paidDate||'—'}</span></div>
+      <div class="detail-meta-item"><span class="detail-meta-label">備註</span><span class="detail-meta-value">${o.note||'—'}</span></div>
+    </div>
+    <table class="detail-items-table">
+      <thead><tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr></thead>
+      <tbody>${o.items.map(i=>`<tr><td>${i.name}</td><td>${i.qty} ${i.unit}</td><td>$${i.price}</td><td>$${(i.qty*i.price).toLocaleString()}</td></tr>`).join('')}</tbody>
+    </table>
+    <div class="detail-total"><span style="font-size:12px;color:var(--text3);">應付金額</span><span style="font-size:20px;font-weight:600;">$${o.total.toLocaleString()}</span></div>
+  `;
+  document.getElementById('detail-actions').innerHTML = `
+    <div class="kebab-wrap no-print">
+      <button class="kebab-btn" onclick="toggleKebab(event)">⋮</button>
+      <div class="kebab-menu" id="kebab-menu">
+        <button class="kebab-item" onclick="printDetail()">⎙ 列印出貨單</button>
+        <button class="kebab-item" onclick="editOrder('${o.id}')">✎ 編輯訂單</button>
+        <div class="kebab-sep"></div>
+        <button class="kebab-item danger" onclick="deleteOrder('${o.id}')">✕ 刪除訂單</button>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn" onclick="closeDetail()">關閉</button>
+    ${o.status==='pending'?`<button class="btn btn-primary" onclick="openModal('${o.id}');closeDetail()">標記已付款</button>`:''}
+  `;
+  document.getElementById('detail-modal-bg').style.display = 'flex';
+}
+
+function closeDetail() { document.getElementById('detail-modal-bg').style.display = 'none'; }
+function openModal(id) { pendingPaidId = id; document.getElementById('modal-date').value = today(); document.getElementById('modal-bg').style.display = 'flex'; }
+function closeModal() { document.getElementById('modal-bg').style.display = 'none'; }
+async function confirmPaid() {
+  const d = document.getElementById('modal-date').value;
+  const o = orders.find(x => x.id === pendingPaidId);
+  if (o) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${o.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'paid', paid_date: d })
+      });
+      o.status = 'paid'; o.paidDate = d; renderOrders(); toast('✓ 已完成付款標記');
+    } catch(e) { alert(e.message); }
+  }
+  closeModal();
+}
+
+function renderMonthly() {
+  const ym = document.getElementById('monthly-month').value;
+  if (!ym) return;
+  const list = orders.filter(o => o.date.startsWith(ym));
+  const printTitle = document.getElementById('print-title');
+  if(printTitle) printTitle.textContent = ym + ' 採購帳務報表';
+
+  if (list.length === 0) {
+    document.getElementById('monthly-summary').innerHTML = '';
+    document.getElementById('monthly-table').innerHTML = '<div class="empty">該月份無採購記錄</div>';
+    return;
+  }
+
+  const vMap = {};
+  list.forEach(o => {
+    if (!vMap[o.vendor]) vMap[o.vendor] = { total: 0, pending: 0, count: 0 };
+    vMap[o.vendor].total += o.total;
+    vMap[o.vendor].count += 1;
+    if (o.status === 'pending') vMap[o.vendor].pending += o.total;
+  });
+
+  const total = list.reduce((s, o) => s + o.total, 0);
+  const unpaid = list.filter(o => o.status === 'pending').reduce((s, o) => s + o.total, 0);
+
+  document.getElementById('monthly-summary').innerHTML = `
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.25rem;">
+      <div class="metric"><div class="metric-label">總訂單</div><div class="metric-value">${list.length}</div></div>
+      <div class="metric"><div class="metric-label">本月採購額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">待付款</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>
+    </div>
+  `;
+
+  let html = `<table><thead><tr><th>廠商</th><th>訂單筆數</th><th>本月金額</th><th>未付金額</th><th>狀態</th></tr></thead><tbody>`;
+  Object.keys(vMap).sort((a,b) => vMap[b].total - vMap[a].total).forEach(v => {
+    html += `<tr><td>${v}</td><td>${vMap[v].count}</td><td>$${vMap[v].total.toLocaleString()}</td><td style="color:var(--amber);">$${vMap[v].pending.toLocaleString()}</td><td><span class="badge ${vMap[v].pending===0?'badge-paid':'badge-pending'}">${vMap[v].pending===0?'已付清':'有欠款'}</span></td></tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('monthly-table').innerHTML = html;
+}
+
+function renderVendors() {
+  const cat = document.querySelector('.vendor-cat-tab.active').dataset.cat;
+  const list = VENDOR_CATEGORIES[cat] || [];
+  const tabContainer = document.getElementById('vendor-tabs');
+  tabContainer.innerHTML = list.map(v => {
+    const hasUnpaid = orders.some(o => o.vendor === v && o.status === 'pending');
+    return `<button class="vendor-tab" data-vendor="${v}" onclick="selectVendor('${v}')">${v}${hasUnpaid?'<span class="unpaid-dot"></span>':''}</button>`;
+  }).join('');
+  if (list.length > 0) selectVendor(list[0]);
+}
+
+function selectVendorCategory(cat) {
+  document.querySelectorAll('.vendor-cat-tab').forEach(el => el.classList.toggle('active', el.dataset.cat === cat));
+  renderVendors();
+}
+
+function selectVendor(v) {
+  document.querySelectorAll('.vendor-tab').forEach(el => el.classList.toggle('active', el.dataset.vendor === v));
+  const list = orders.filter(o => o.vendor === v).sort((a,b) => b.date.localeCompare(a.date));
+  const unpaid = list.filter(o => o.status === 'pending').reduce((s,o) => s + o.total, 0);
+  const total = list.reduce((s,o) => s + o.total, 0);
+  
+  document.getElementById('vendor-content').innerHTML = `
+    <div class="vendor-card">
+      <div class="vendor-header"><div class="vendor-name">${v}</div><div class="vendor-meta">累計採購 ${list.length} 筆</div></div>
+      <div class="vendor-stats">
+        <div class="vendor-stat"><div class="vendor-stat-label">累計總額</div><div class="vendor-stat-value">$${total.toLocaleString()}</div></div>
+        <div class="vendor-stat"><div class="vendor-stat-label">未付餘額</div><div class="vendor-stat-value warn">$${unpaid.toLocaleString()}</div></div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>日期</th><th>金額</th><th>狀態</th></tr></thead>
+        <tbody>${list.slice(0,10).map(o => `<tr><td>${o.date}</td><td>$${o.total.toLocaleString()}</td><td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付':'未付'}</span></td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function initPriceSearch() {
+  const vendors = [...new Set(orders.map(o => o.vendor))];
+  document.getElementById('price-vendor').innerHTML = '<option value="">所有廠商</option>' + vendors.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
+function renderPriceSearch() {
+  const q = document.getElementById('price-search').value.toLowerCase();
+  const v = document.getElementById('price-vendor').value;
+  if (!q) { document.getElementById('price-results').innerHTML = ''; return; }
+  
+  const results = [];
+  orders.forEach(o => {
+    if (v && o.vendor !== v) return;
+    o.items.forEach(it => {
+      if (it.name.toLowerCase().includes(q)) {
+        results.push({ date: o.date, vendor: o.vendor, name: it.name, price: it.price, unit: it.unit });
+      }
+    });
+  });
+  
+  results.sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('price-results').innerHTML = results.length === 0 ? '<div class="empty">查無採購紀錄</div>' : `
+    <div class="table-wrap">
+      <table><thead><tr><th>日期</th><th>廠商</th><th>品項</th><th>價格</th></tr></thead>
+      <tbody>${results.map(r => `<tr><td>${r.date}</td><td>${r.vendor}</td><td>${r.name}</td><td style="font-weight:600;">$${r.price} / ${r.unit}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+let formCounter = 0;
+function addOrderForm() {
+  formCounter++;
+  const fid = formCounter;
+  const html = `
+    <div class="card order-form-card" id="oform-${fid}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
+        <span style="font-weight:600;color:var(--text3);">#${fid} 採購訂單</span>
+        <button class="btn btn-sm btn-ghost" onclick="removeOrderForm(${fid})">✕ 移除</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>日期 *</label><input type="date" id="f-date-${fid}" value="${today()}"></div>
+        <div class="form-group"><label>廠商 *</label><input type="text" id="f-vendor-${fid}" list="vendor-list" placeholder="輸入廠商名稱"></div>
+        <div class="form-group"><label>類別</label><select id="f-type-${fid}"><option value="buy">一般進貨</option><option value="refund">退貨</option></select></div>
+      </div>
+      <div class="sep"></div>
+      <div class="items-header"><span>品名</span><span>數量</span><span>單位</span><span>單價</span><span></span></div>
+      <div id="items-container-${fid}"></div>
+      <button class="btn btn-sm btn-ghost" onclick="addItemRow(${fid})" style="margin-top:5px;">+ 新增品項</button>
+      <div class="order-footer">
+        <div class="order-total-label">總計金額</div>
+        <div class="order-total-amount" id="f-total-${fid}">$0</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('order-forms-container').insertAdjacentHTML('beforeend', html);
+  addItemRow(fid);
+}
+
+function addItemRow(fid) {
+  const iid = Date.now() + Math.random();
+  const html = `
+    <div class="item-row" id="row-${iid}">
+      <input type="text" placeholder="商品名稱" class="iname" oninput="updateRowTotal(${fid})">
+      <input type="number" value="1" min="0" class="iqty" oninput="updateRowTotal(${fid})">
+      <input type="text" value="斤" class="iunit" style="width:60px;">
+      <input type="number" placeholder="單價" class="iprice" oninput="updateRowTotal(${fid})">
+      <button class="remove-btn" onclick="this.parentElement.remove();updateRowTotal(${fid})">✕</button>
+    </div>
+  `;
+  document.getElementById(`items-container-${fid}`).insertAdjacentHTML('beforeend', html);
+}
+
+function updateRowTotal(fid) {
+  let total = 0;
+  const container = document.getElementById(`items-container-${fid}`);
+  container.querySelectorAll('.item-row').forEach(row => {
+    const q = parseFloat(row.querySelector('.iqty').value) || 0;
+    const p = parseFloat(row.querySelector('.iprice').value) || 0;
+    total += q * p;
+  });
+  document.getElementById(`f-total-${fid}`).textContent = '$' + Math.round(total).toLocaleString();
+}
+
+function removeOrderForm(fid) {
+  const el = document.getElementById(`oform-${fid}`);
+  if (el) el.remove();
+}
+
+async function saveAllOrders() {
+  const cards = document.querySelectorAll('.order-form-card');
+  if (cards.length === 0) return;
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '儲存中…';
+  
+  try {
+    for (const card of cards) {
+      const fid = card.id.split('-')[1];
+      const date = document.getElementById(`f-date-${fid}`).value;
+      const vendor = document.getElementById(`f-vendor-${fid}`).value.trim();
+      const type = document.getElementById(`f-type-${fid}`).value;
+      if (!date || !vendor) continue;
+      
+      const items = [];
+      card.querySelectorAll('.item-row').forEach(row => {
+        const name = row.querySelector('.iname').value.trim();
+        const qty = parseFloat(row.querySelector('.iqty').value) || 0;
+        const price = parseFloat(row.querySelector('.iprice').value) || 0;
+        const unit = row.querySelector('.iunit').value.trim();
+        if (name) items.push({ name, qty, price, unit });
+      });
+      
+      if (items.length === 0) continue;
+      const total = items.reduce((s, i) => s + i.qty * i.price, 0);
+      const orderData = { id: Date.now().toString() + Math.random(), date, vendor, total, status: 'pending', type };
+      
+      await sbFetch('orders', { method: 'POST', body: JSON.stringify(orderData) });
+      for (const it of items) {
+        await sbFetch('order_items', { method: 'POST', body: JSON.stringify({ order_id: orderData.id, ...it }) });
+      }
+    }
+    toast('✓ 訂單已全數儲存');
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) { alert(e.message); btn.disabled = false; btn.textContent = '儲存全部訂單'; }
+}
+
+(async () => {
+  await loadOrders();
+  if (orders.length === 0) addOrderForm();
+})();
+</script>
+
+<datalist id="vendor-list">
+  <option value="利仁"><option value="廣生堂"><option value="和盛記"><option value="界順"><option value="明(坤贊)"><option value="三興"><option value="仁記"><option value="銓崧"><option value="中冬金元"><option value="鴻龍"><option value="信惠虹"><option value="源山"><option value="集昌"><option value="漢良堂"><option value="德合記"><option value="河記"><option value="駿賀"><option value="養蜂場"><option value="港香蘭"><option value="大新"><option value="豐甲"><option value="富田喬"><option value="原祥塑膠"><option value="捷可印"><option value="紙箱龍"><option value="南成"><option value="宏笙"><option value="尚景印刷"><option value="新竹貨運"><option value="宅配通"><option value="新光保全"><option value="興承"><option value="崇友">
+</datalist>
+</body>
+</html>
