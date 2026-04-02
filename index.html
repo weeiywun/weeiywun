@@ -229,7 +229,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">惟</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.5 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.6 ☁</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -2217,7 +2217,13 @@ async function renderCodList() {
 
   try {
     const data = await _codFetch('cod_records?select=*&order=send_date.desc');
-    const all = (data || []).map(_mapCod);
+
+    // 防呆：確保 API 有回傳資料且格式為陣列
+    if (!data || !Array.isArray(data)) {
+      throw new Error('回傳資料格式錯誤或 cod_records 資料表不存在');
+    }
+
+    const all = data.map(_mapCod);
 
     if (all.length === 0) {
       container.innerHTML = '<div class="empty">尚無代收款記錄</div>';
@@ -2296,7 +2302,11 @@ async function renderCodList() {
       <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">${rows}</div>`;
 
   } catch (e) {
-    container.innerHTML = `<div style="padding:1rem;color:#e53e3e;font-size:13px;font-weight:500;">❌ 載入失敗：${e.message}</div>`;
+    console.error('載入代收款紀錄失敗:', e);
+    container.innerHTML = `<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:8px;">
+      <strong>載入失敗：</strong><br>${e.message}<br>
+      <span style="font-size:12px;color:#991b1b;">請確認 Supabase 中是否有 cod_records 資料表，以及 API 快取是否已刷新。</span>
+    </div>`;
   }
 }
 
