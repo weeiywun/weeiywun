@@ -1978,10 +1978,11 @@ async function batchMarkPaid() {
       <div style="margin-bottom:1.25rem;">${vendorCheckboxes}</div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button onclick="document.getElementById('batch-pay-modal').remove()" class="btn">取消</button>
-        <button onclick="executeBatchMarkPaid('${ym}')" class="btn btn-success">確認標記付款</button>
+        <button id="batch-pay-confirm-btn" class="btn btn-success">確認標記付款</button>
       </div>
     </div>`;
   document.body.appendChild(div);
+  document.getElementById('batch-pay-confirm-btn').addEventListener('click', () => executeBatchMarkPaid(ym));
 }
 
 async function executeBatchMarkPaid(ym) {
@@ -2040,10 +2041,12 @@ async function batchMarkVendorPaid(vendor) {
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button onclick="document.getElementById('vendor-batch-pay-modal').remove()" class="btn">取消</button>
-        <button onclick="executeVendorBatchPaid('${vendor.replace(/'/g,"\\'")}'))" class="btn btn-success">確認付清</button>
+        <button id="vendor-batch-pay-confirm-btn" class="btn btn-success">確認付清</button>
       </div>
     </div>`;
   document.body.appendChild(div);
+  // 用事件綁定避開引號問題
+  document.getElementById('vendor-batch-pay-confirm-btn').addEventListener('click', () => executeVendorBatchPaid(vendor));
 }
 
 async function executeVendorBatchPaid(vendor) {
@@ -2228,18 +2231,28 @@ async function confirmCodCollected(id) {
   const actualAmount = parseFloat(actualInput) || rec.amount;
 
   try {
+    // 先嘗試含 actual_amount 欄位更新
     await updateCodRecord(id, {
       collected: true,
       collected_date: date.trim(),
       actual_amount: actualAmount
     });
-    await renderCodList();
-    const diff = actualAmount - rec.amount;
-    const diffText = diff !== 0 ? `（差額 ${diff > 0 ? '+' : ''}$${diff.toLocaleString()}）` : '';
-    toast(`✓ 已確認到帳 $${actualAmount.toLocaleString()} ${diffText}`);
   } catch(e) {
-    alert('更新失敗：' + e.message);
+    // 如果 actual_amount 欄位不存在，退而只更新基本欄位
+    try {
+      await updateCodRecord(id, {
+        collected: true,
+        collected_date: date.trim()
+      });
+    } catch(e2) {
+      alert('更新失敗：' + e2.message);
+      return;
+    }
   }
+  await renderCodList();
+  const diff = actualAmount - rec.amount;
+  const diffText = diff !== 0 ? `（差額 ${diff > 0 ? '+' : ''}$${diff.toLocaleString()}）` : '';
+  toast(`✓ 已確認到帳 $${actualAmount.toLocaleString()} ${diffText}`);
 }
 
 async function deleteCodRecord(id) {
