@@ -742,14 +742,117 @@ async function saveAllOrders() {
 // ── 月底結算報表 ────────────────────────────────────
 function renderMonthly() {
   const ym = document.getElementById('monthly-month').value;
-  if(!ym) return;
-  const list = orders.filter(o => o.date.startsWith(ym));
-  const total = list.reduce((s,o)=>s+o.total,0);
-  const unpaid = list.filter(o=>o.status==='pending').reduce((s,o)=>s+o.total,0);
-  document.getElementById('monthly-summary').innerHTML = `<h3>${ym} 結算</h3><p>總額：$${total.toLocaleString()} | 待付：$${unpaid.toLocaleString()}</p>`;
-  document.getElementById('monthly-table').innerHTML = list.map(o=>`<div>${o.vendor} - $${o.total} (${o.status})</div>`).join('');
-}
+  if (!ym) {
+    document.getElementById('monthly-table').innerHTML = '<div class="empty">請選擇月份</div>';
+    document.getElementById('monthly-summary').innerHTML = '';
+    return;
+  }
 
+  // 設定列印標題
+  const printTitleEl = document.getElementById('print-title');
+  if (printTitleEl) printTitleEl.textContent = ym + ' 月底結算報表';
+
+  // 篩選出該月份的所有訂單
+  const list = orders.filter(o => o.date.startsWith(ym));
+
+  if (list.length === 0) {
+    document.getElementById('monthly-summary').innerHTML = '';
+    document.getElementById('monthly-table').innerHTML = '<div class="empty">該月份無訂單記錄</div>';
+    return;
+  }
+
+  // 依照廠商分組加總
+  const vendorMap = {};
+  list.forEach(o => {
+    if (!vendorMap[o.vendor]) {
+      vendorMap[o.vendor] = { orders: [], total: 0, pending: 0, paid: 0 };
+    }
+    vendorMap[o.vendor].orders.push(o);
+    vendorMap[o.vendor].total += o.total;
+    if (o.status === 'pending') vendorMap[o.vendor].pending += o.total;
+    if (o.status === 'paid') vendorMap[o.vendor].paid += o.total;
+  });
+
+  // 計算總計
+  let grandTotal = 0;
+  let grandPending = 0;
+  let grandPaid = 0;
+
+  // 準備表格 HTML
+  let tableHtml = `
+    <table>
+      <thead>
+        <tr>
+          <th>廠商</th>
+          <th>訂單數</th>
+          <th>總金額</th>
+          <th>未付金額</th>
+          <th>已付金額</th>
+          <th class="no-print">狀態</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  // 依照總金額由大到小排序廠商
+  const sortedVendors = Object.keys(vendorMap).sort((a, b) => vendorMap[b].total - vendorMap[a].total);
+
+  sortedVendors.forEach(v => {
+    const data = vendorMap[v];
+    grandTotal += data.total;
+    grandPending += data.pending;
+    grandPaid += data.paid;
+
+    const isAllPaid = data.pending === 0;
+
+    tableHtml += `
+      <tr>
+        <td style="font-weight:600;">${v}</td>
+        <td>${data.orders.length} 筆</td>
+        <td style="font-weight:600;">$${data.total.toLocaleString()}</td>
+        <td style="color:${data.pending > 0 ? 'var(--amber)' : 'inherit'};">$${data.pending.toLocaleString()}</td>
+        <td style="color:var(--green);">$${data.paid.toLocaleString()}</td>
+        <td class="no-print">
+          ${isAllPaid ? '<span class="badge badge-paid">已結清</span>' : '<span class="badge badge-pending">有欠款</span>'}
+        </td>
+      </tr>
+    `;
+  });
+
+  // 總計列
+  tableHtml += `
+      <tr class="total-row">
+        <td>總計</td>
+        <td>${list.length} 筆</td>
+        <td style="color:var(--blue);font-size:15px;">$${grandTotal.toLocaleString()}</td>
+        <td style="color:var(--amber);font-size:15px;">$${grandPending.toLocaleString()}</td>
+        <td style="color:var(--green);font-size:15px;">$${grandPaid.toLocaleString()}</td>
+        <td class="no-print"></td>
+      </tr>
+      </tbody>
+    </table>
+  `;
+
+  document.getElementById('monthly-table').innerHTML = tableHtml;
+
+  // 更新上方的數據卡片
+  document.getElementById('monthly-summary').innerHTML = `
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr); margin-bottom: 1rem;">
+      <div class="metric">
+        <div class="metric-label">本月總採購額</div>
+        <div class="metric-value" style="color:var(--blue);">$${grandTotal.toLocaleString()}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">待付款總額</div>
+        <div class="metric-value warn">$${grandPending.toLocaleString()}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">已付款總額</div>
+        <div class="metric-value ok">$${grandPaid.toLocaleString()}</div>
+      </div>
+    </div>
+  `;
+}
 // ── 廠商與價格搜尋 ──────────────────────────────────
 function renderVendorTabs() { /* 簡化處理 */ }
 function initPriceSearch() { /* 簡化處理 */ }
