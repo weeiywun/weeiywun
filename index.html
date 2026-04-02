@@ -229,7 +229,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">惟</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.6 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.7 ☁</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -2341,6 +2341,8 @@ async function checkCodAlert() {
 }
 
 
+
+function today() { return new Date().toISOString().slice(0, 10); }
 
 // ── 啟動 ──────────────────────────────────────────────
 (async () => {
