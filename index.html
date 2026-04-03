@@ -5,12 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iI0U4NzUxQSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMyIgZm9udC1mYW1pbHk9InNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iYm9sZCIgCiAgICAgICAgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuW4szwvdGV4dD4KPC9zdmc+">
 <title>惟元門市 — 進貨帳務管理系統</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  corePlugins: { preflight: false },
+  important: false
+}
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <!-- 密碼保護 -->
-<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:#faf9f7;z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:2.5rem 2rem;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);text-align:center;border:1px solid #e5e3de;">
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:#faf9f7;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#fff;border-radius:14px;padding:2.5rem 2rem;width:320px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);text-align:center;border:1px solid #e5e3de;">
     <div style="width:40px;height:40px;background:#d4691a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;font-family:serif;margin:0 auto .75rem;">帳</div>
     <div style="font-size:15px;font-weight:600;margin-bottom:.2rem;color:#1a1917;">惟元門市</div>
     <div style="font-size:12px;color:#9e9b94;margin-bottom:1.5rem;">進貨帳務管理系統</div>

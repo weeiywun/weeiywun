@@ -171,6 +171,61 @@ tr:hover td{background:var(--surface2);}
 .sync-dot.error{background:var(--red);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .print-title{display:none;}
+/* ===== RWD 響應式斷點 ===== */
+
+/* 平板 (≤1024px) */
+@media (max-width:1024px){
+  .metrics{grid-template-columns:repeat(2,1fr)!important;}
+  .form-grid{grid-template-columns:repeat(2,1fr);}
+  .item-row,.items-header{grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 32px;gap:5px;}
+  .edit-item-row{grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 28px;gap:5px;}
+}
+
+/* 手機 (≤768px) */
+@media (max-width:768px){
+  .header{padding:0 1rem;}
+  .header-inner{height:auto;min-height:48px;flex-wrap:wrap;gap:6px;padding:8px 0;}
+  .header-inner>div:last-child{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:6px;}
+  .nav{padding:0 1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .nav-inner{gap:0;min-width:max-content;}
+  .nav-tab{padding:10px 11px;font-size:12px;white-space:nowrap;}
+  .main{padding:1rem;max-width:100%;}
+  .metrics{grid-template-columns:1fr 1fr!important;}
+  .metric-value{font-size:18px;}
+  .form-grid{grid-template-columns:1fr;}
+  .items-header{display:none;}
+  .item-row{grid-template-columns:1fr 1fr;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .item-row input,.item-row select{padding:8px;}
+  .edit-item-row{grid-template-columns:1fr 1fr;gap:6px;}
+  .filter-row{flex-direction:column;align-items:stretch;}
+  .filter-row input,.filter-row select{width:100%!important;}
+  .card{border-radius:10px;padding:1rem;}
+  .detail-modal{width:96vw;max-height:92vh;}
+  .detail-meta{grid-template-columns:1fr;}
+  .modal{width:90vw;max-width:340px;}
+  table{font-size:12px;}
+  th,td{padding:7px 8px;}
+  .vendor-stats{grid-template-columns:1fr;}
+  .vendor-header{padding:1rem;flex-direction:column;gap:8px;}
+  .order-total-amount{font-size:20px;}
+  .order-footer{flex-direction:column;gap:8px;align-items:flex-start;}
+  .toast{left:16px;right:16px;bottom:16px;text-align:center;}
+  #vendor-category-tabs{flex-wrap:wrap;gap:4px;}
+  .vendor-cat-tab{padding:6px 12px;font-size:12px;}
+}
+
+/* 小手機 (≤480px) */
+@media (max-width:480px){
+  .metrics{grid-template-columns:1fr!important;}
+  .item-row{grid-template-columns:1fr;gap:6px;}
+  .edit-item-row{grid-template-columns:1fr;gap:6px;}
+  .header-inner .btn-sm{font-size:11px;padding:3px 8px;}
+  .logo-text{font-size:13px;}
+  .logo-sub{font-size:9.5px;}
+  .logo-badge{width:24px;height:24px;font-size:10px;}
+  .detail-meta{gap:6px;}
+}
+
 @media print{
   .header,.nav,.filter-row,.btn,.no-print{display:none!important;}
   .section{display:block!important;}
