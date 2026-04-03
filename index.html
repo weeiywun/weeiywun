@@ -33,10 +33,10 @@
       <div class="logo-badge">帳</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub" id="logo-sub-hidden" onclick="(function(){window._logoutClicks=(window._logoutClicks||0)+1;if(window._logoutClicks>=3){window._logoutClicks=0;localStorage.removeItem('ww_employee_auth');location.reload();}})()" style="cursor:default;user-select:none;">採購帳務系統 v4.7 ☁</div>
+        <div class="logo-sub">採購帳務系統 v4.7 ☁</div>
       </div>
     </a>
-    <button id="admin-logout-btn" class="btn btn-sm btn-ghost" onclick="localStorage.removeItem('ww_auth');location.reload();" style="font-size:12px;color:var(--text3);margin-left:4px;">登出</button>
+    <button id="admin-logout-btn" class="btn btn-sm btn-ghost" onclick="localStorage.removeItem('ww_auth');localStorage.removeItem('ww_employee_auth');location.reload();" style="font-size:12px;color:var(--text3);margin-left:4px;">登出</button>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
       <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);">
         <span class="sync-dot" id="sync-dot"></span>

@@ -45,8 +45,6 @@
     });
     const headerBtns = document.querySelector('.header-inner .no-print');
     if (headerBtns) headerBtns.style.display = 'none';
-    const adminLogout = document.getElementById('admin-logout-btn');
-    if (adminLogout) adminLogout.style.display = 'none';
     if (typeof switchTab === 'function') switchTab('cod');
   }
   window.checkAuth = checkAuth;
