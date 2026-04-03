@@ -9,17 +9,17 @@
 </head>
 <body>
 <!-- 密碼保護 -->
-<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:#f7f7f8;z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:2.5rem 2rem;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);text-align:center;border:1px solid #e2e2e6;">
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:#faf9f7;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:2.5rem 2rem;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);text-align:center;border:1px solid #e5e3de;">
     <div style="width:40px;height:40px;background:#d4691a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;font-family:serif;margin:0 auto .75rem;">帳</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:.2rem;color:#18181b;">惟元門市</div>
-    <div style="font-size:12px;color:#93939e;margin-bottom:1.5rem;">進貨帳務管理系統</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:.2rem;color:#1a1917;">惟元門市</div>
+    <div style="font-size:12px;color:#9e9b94;margin-bottom:1.5rem;">進貨帳務管理系統</div>
     <input type="password" id="auth-input" placeholder="密碼"
-      style="width:100%;padding:.7rem 1rem;border:1px solid #cbcbd1;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;text-align:center;letter-spacing:.15em;font-family:'Noto Sans TC',sans-serif;transition:border-color .12s;"
+      style="width:100%;padding:.7rem 1rem;border:1px solid #d0cec8;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;text-align:center;letter-spacing:.15em;font-family:'Noto Sans TC',sans-serif;transition:border-color .12s;"
       onfocus="this.style.borderColor='#d4691a';this.style.boxShadow='0 0 0 3px rgba(212,105,26,.08)'"
-      onblur="this.style.borderColor='#cbcbd1';this.style.boxShadow='none'"
+      onblur="this.style.borderColor='#d0cec8';this.style.boxShadow='none'"
       onkeydown="if(event.key==='Enter')checkAuth()">
-    <div id="auth-error" style="color:#b91c1c;font-size:12px;margin-top:.5rem;min-height:18px;"></div>
+    <div id="auth-error" style="color:#dc2626;font-size:12px;margin-top:.5rem;min-height:18px;"></div>
     <button onclick="checkAuth()"
       style="width:100%;margin-top:.75rem;padding:.7rem;background:#d4691a;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:.03em;transition:background .12s;font-family:'Noto Sans TC',sans-serif;"
       onmouseover="this.style.background='#c25e16'" onmouseout="this.style.background='#d4691a'">

@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  /* 色彩：從「AI 暖米色」改為帶微藍灰的中性色，更接近實際設計師選色 */
-  --bg:#f7f7f8;--surface:#fff;--surface2:#f0f0f2;--border:#e2e2e6;--border2:#cbcbd1;
-  --text:#18181b;--text2:#5c5c66;--text3:#93939e;--accent:#2c2c30;
+  /* 暖米色系統色 */
+  --bg:#faf9f7;--surface:#fff;--surface2:#f5f3f0;--border:#e5e3de;--border2:#d0cec8;
+  --text:#1a1917;--text2:#6b6962;--text3:#9e9b94;--accent:#2c2a27;
   /* 品牌色：保留橘色但微調為更有溫度的磚橘 */
   --brand:#d4691a;--brand-light:#fdf3eb;
   --green:#15803d;--green-bg:#f0fdf4;--amber:#a16207;--amber-bg:#fefce8;
@@ -71,7 +71,7 @@ td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:var(--surface2);}
 .order-row{cursor:pointer;}
-.order-row:hover td{background:#eeeef1 !important;}
+.order-row:hover td{background:#f0ede8 !important;}
 .total-row td{font-weight:600;background:var(--surface2)!important;}
 /* badge：不用完美圓角藥丸，用小圓角方塊更有手感 */
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
@@ -93,7 +93,7 @@ tr:hover td{background:var(--surface2);}
 /* toast：用品牌色而非黑色 */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--brand);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(6px);transition:all .18s;pointer-events:none;z-index:999;}
 .toast.show{opacity:1;transform:translateY(0);}
-.modal-bg{position:fixed;inset:0;background:rgba(24,24,27,.4);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-bg{position:fixed;inset:0;background:rgba(26,25,23,.4);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
 .modal{background:var(--surface);border-radius:14px;padding:1.5rem;width:340px;box-shadow:var(--shadow-lg);}
 .modal h3{font-size:15px;font-weight:600;margin-bottom:1rem;}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;}
