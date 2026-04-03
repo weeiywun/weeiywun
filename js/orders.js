@@ -177,7 +177,7 @@ function renderEditDetail(o) {
       <div class="form-group"><label>訂單編號</label><input type="text" id="e-orderid" value="${o.orderId||''}"></div>
       <div class="form-group"><label>廠商</label><input type="text" id="e-vendor" value="${o.vendor}" list="vendor-list"></div>
     </div>
-    <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">商品明細</div>
+    <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.01em;margin-bottom:6px;">商品明細</div>
     <div style="display:grid;grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 28px;gap:6px;margin-bottom:5px;">
       ${['商品名稱','單價','數量','單位','小計',''].map(h=>`<span style="font-size:11px;color:var(--text3);">${h}</span>`).join('')}
     </div>
