@@ -194,19 +194,34 @@ tr:hover td{background:var(--bg);}
 (function() {
   const PWD = '53251954';
   const KEY = 'ww_auth';
-  const DAYS = 1;
+  const EMPLOYEE_PWD = '820626';
+  const EMPLOYEE_KEY = 'ww_employee_auth';
+
   function isAuthed() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY));
-      return d && d.exp > Date.now();
+      return d && d.ok === true;
+    } catch { return false; }
+  }
+  function isEmployee() {
+    try {
+      const d = JSON.parse(localStorage.getItem(EMPLOYEE_KEY));
+      return d && d.ok === true;
     } catch { return false; }
   }
   function checkAuth() {
     const val = document.getElementById('auth-input').value;
     if (val === PWD) {
-      localStorage.setItem(KEY, JSON.stringify({ exp: Date.now() + DAYS * 86400000 }));
+      localStorage.setItem(KEY, JSON.stringify({ ok: true }));
+      localStorage.removeItem(EMPLOYEE_KEY);
       document.getElementById('auth-overlay').style.display = 'none';
       document.getElementById('auth-input').value = '';
+    } else if (val === EMPLOYEE_PWD) {
+      localStorage.setItem(EMPLOYEE_KEY, JSON.stringify({ ok: true }));
+      localStorage.removeItem(KEY);
+      document.getElementById('auth-overlay').style.display = 'none';
+      document.getElementById('auth-input').value = '';
+      applyEmployeeMode();
     } else {
       const err = document.getElementById('auth-error');
       err.textContent = '密碼錯誤，請再試一次';
@@ -215,12 +230,32 @@ tr:hover td{background:var(--bg);}
       setTimeout(() => err.textContent = '', 3000);
     }
   }
+  function applyEmployeeMode() {
+    window._employeeMode = true;
+    // 隱藏所有頁籤，只留貨到付款查帳
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+      btn.style.display = btn.dataset.tab === 'cod' ? '' : 'none';
+    });
+    // 隱藏 header 右側按鈕群
+    const headerBtns = document.querySelector('.header-inner .no-print');
+    if (headerBtns) headerBtns.style.display = 'none';
+    // 切換到貨到付款查帳頁
+    if (typeof switchTab === 'function') switchTab('cod');
+  }
   window.checkAuth = checkAuth;
-  if (!isAuthed()) {
+  window.isEmployeeMode = function() { return !!window._employeeMode; };
+
+  if (isEmployee()) {
+    document.getElementById('auth-overlay').style.display = 'none';
+    window._employeeMode = true;
+    document.addEventListener('DOMContentLoaded', applyEmployeeMode);
+    // DOMContentLoaded 可能已觸發，直接也呼叫一次
+    if (document.readyState !== 'loading') applyEmployeeMode();
+  } else if (isAuthed()) {
+    document.getElementById('auth-overlay').style.display = 'none';
+  } else {
     document.getElementById('auth-overlay').style.display = 'flex';
     setTimeout(() => document.getElementById('auth-input').focus(), 100);
-  } else {
-    document.getElementById('auth-overlay').style.display = 'none';
   }
 })();
 </script>
@@ -231,7 +266,7 @@ tr:hover td{background:var(--bg);}
       <div class="logo-badge">帳</div>
       <div>
         <div class="logo-text">惟元門市 進貨管理</div>
-        <div class="logo-sub">採購帳務系統 v4.7 ☁</div>
+        <div class="logo-sub" id="logo-sub-hidden" onclick="(function(){window._logoutClicks=(window._logoutClicks||0)+1;if(window._logoutClicks>=3){window._logoutClicks=0;localStorage.removeItem('ww_employee_auth');location.reload();}})()" style="cursor:default;user-select:none;">採購帳務系統 v4.7 ☁</div>
       </div>
     </a>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
@@ -2295,7 +2330,7 @@ async function renderCodList() {
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
             ${!r.collected ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認到帳</button>` : ''}
-            <button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>
+            ${window.isEmployeeMode && window.isEmployeeMode() ? '' : `<button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>`}
           </div>
         </div>`;
     }).join('');
