@@ -65,11 +65,11 @@ function createOrderFormHTML(fid) {
     <!-- 商品明細 -->
     <div style="margin-top:1rem;">
       <div class="items-header" style="display:grid;grid-template-columns:2.2fr 0.8fr 0.7fr 1fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">商品名稱</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">數量</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單位</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">單價（元）</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;">小計</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">商品名稱</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">數量</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">單位</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">單價（元）</span>
+        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">小計</span>
         <span></span>
       </div>
       <div id="items-container-${fid}"></div>

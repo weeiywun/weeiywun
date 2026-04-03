@@ -128,7 +128,7 @@ function renderVendorContent() {
 
   document.getElementById('vendor-summary-bar').innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;">
-      <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem;">
+      <div style="font-size:12px;color:var(--text2);font-weight:500;letter-spacing:.01em;margin-bottom:.75rem;">
         ${rangeText}　共 ${names.length} 家廠商
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">

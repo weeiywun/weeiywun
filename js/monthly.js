@@ -175,7 +175,7 @@ function printMonthly() {
       if (cat === '其他' && vendors.length === 0) continue;
       summaryHTML += `
         <div style="margin-bottom:.75rem;">
-          <div style="font-size:11px;font-weight:700;color:#555;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.35rem;padding-bottom:.2rem;border-bottom:1px solid #ddd;">${cat}</div>
+          <div style="font-size:12px;font-weight:600;color:#555;letter-spacing:.01em;margin-bottom:.35rem;padding-bottom:.2rem;border-bottom:1px solid #ddd;">${cat}</div>
           <table style="${tableStyle}">
             ${colDefs}
             <thead>
