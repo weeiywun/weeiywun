@@ -32,7 +32,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 .main{max-width:1200px;margin:0 auto;padding:1.25rem 2rem 3rem;}
 .section{display:none;}.section.active{display:block;}
 /* card：不同大小用不同圓角，打破機械感 */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;box-shadow:var(--shadow);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;box-shadow:var(--shadow);}
 .card+.card{margin-top:.875rem;}
 /* metrics：左側加品牌色豎線，不再是完全對稱的盒子 */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
@@ -55,6 +55,14 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 .btn-danger:hover{background:#fee2e2;}
 .btn-ghost{border-color:transparent;background:transparent;color:var(--text3);}
 .btn-ghost:hover{background:var(--surface2);color:var(--text2);}
+/* checkbox：自訂樣式與登入頁面風格一致 */
+input[type="checkbox"]{width:16px;height:16px;appearance:none;-webkit-appearance:none;border:1.5px solid var(--border2);border-radius:4px;background:var(--surface);cursor:pointer;position:relative;transition:all .12s;flex-shrink:0;}
+input[type="checkbox"]:checked{background:var(--brand);border-color:var(--brand);}
+input[type="checkbox"]:checked::after{content:'';position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);}
+input[type="checkbox"]:focus{box-shadow:0 0 0 3px rgba(212,105,26,.08);}
+/* section 標題 */
+.section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;}
+.section-title::before{content:'';width:3px;height:14px;background:var(--brand);border-radius:2px;}
 .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .form-group{display:flex;flex-direction:column;gap:4px;}
 .form-group label{font-size:12px;font-weight:500;color:var(--text2);}
@@ -149,7 +157,7 @@ tr:hover td{background:var(--surface2);}
 .price-row:last-child{border-bottom:none;}
 .price-item{font-weight:500;}
 .price-meta{color:var(--text3);font-size:12px;}
-.vendor-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:.875rem;}
+.vendor-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:.875rem;}
 .vendor-header{padding:1.25rem;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);}
 .vendor-name{font-size:16px;font-weight:600;}
 .vendor-meta{font-size:12px;color:var(--text3);margin-top:2px;}

@@ -252,7 +252,7 @@ document.addEventListener('click', e => {
 
 async function saveAllOrders() {
   const forms = document.querySelectorAll('.order-form-card');
-  if (!forms.length) { alert('沒有訂單可儲存'); return; }
+  if (!forms.length) { showAlert('提示', '沒有訂單可儲存'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '儲存中…';
@@ -314,7 +314,7 @@ async function saveAllOrders() {
   btn.disabled = false; btn.textContent = '儲存全部訂單';
 
   if (errors.length) {
-    alert('部分失敗：\n' + errors.join('\n'));
+    showAlert('部分儲存失敗', errors.join('\n'));
   }
   if (savedCount > 0) {
     toast(`✓ 已儲存 ${savedCount} 張訂單`);

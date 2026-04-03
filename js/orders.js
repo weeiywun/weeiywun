@@ -67,7 +67,7 @@ function openModal(id) {
 function closeModal() { document.getElementById('modal-bg').style.display = 'none'; pendingPaidId = null; }
 async function confirmPaid() {
   const d = document.getElementById('modal-date').value;
-  if (!d) { alert('請選擇付款日期'); return; }
+  if (!d) { showAlert('提示', '請選擇付款日期'); return; }
   const o = orders.find(x => x.id === pendingPaidId);
   if (o) { o.status = 'paid'; o.paidDate = d; await persist(o, 'update'); renderOrders(); toast('✓ 已標記為付款'); }
   closeModal();
@@ -263,7 +263,7 @@ async function saveEdit(id) {
     const unit = document.getElementById('eunit-'+idx)?.value||'斤';
     if (name) items.push({name, price, qty, unit});
   });
-  if (!items.length) { alert('請至少保留一個品項'); return; }
+  if (!items.length) { showAlert('提示', '請至少保留一個品項'); return; }
   o.date = document.getElementById('e-date').value;
   o.orderId = document.getElementById('e-orderid').value.trim();
   o.vendor = document.getElementById('e-vendor').value.trim();
@@ -283,7 +283,7 @@ async function saveEdit(id) {
 async function createRefund(id) {
   const o = orders.find(x => x.id === id);
   if (!o) return;
-  if (!confirm(`要為「${o.vendor}／${o.orderId||o.date}」建立退換貨記錄嗎？\n\n系統會複製此訂單並標記為退換貨，您可以在編輯模式修改退貨品項與數量。`)) return;
+  if (!await showConfirm('建立退換貨', `要為「${o.vendor}／${o.orderId||o.date}」建立退換貨記錄嗎？\n\n系統會複製此訂單並標記為退換貨，您可以在編輯模式修改退貨品項與數量。`)) return;
   const refund = {
     ...JSON.parse(JSON.stringify(o)),
     id: Date.now().toString(),
@@ -302,7 +302,7 @@ async function createRefund(id) {
 }
 
 async function deleteOrderFromDetail(id) {
-  if (!confirm('確定刪除此訂單？此動作無法復原。')) return;
+  if (!await showDangerConfirm('刪除訂單', '確定刪除此訂單？此動作無法復原。')) return;
   orders = orders.filter(x => x.id !== id);
   await persist(id, 'delete');
   closeDetail();
@@ -321,7 +321,7 @@ function closeKebab() {
 document.addEventListener('click', () => closeKebab());
 
 async function deleteOrder(id) {
-  if (!confirm('確定刪除此訂單？此動作無法復原。')) return;
+  if (!await showDangerConfirm('刪除訂單', '確定刪除此訂單？此動作無法復原。')) return;
   orders = orders.filter(x => x.id !== id);
   await persist(id, 'delete'); renderOrders(); toast('訂單已刪除');
 }

@@ -63,7 +63,7 @@ function renderMonthly() {
 
     return `
       <div style="${dashedTop}break-inside:avoid;page-break-inside:avoid;">
-        <div style="margin-bottom:.5rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);${isAllPaid?'opacity:.75':''}">
+        <div style="margin-bottom:.5rem;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);${isAllPaid?'opacity:.75':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.25rem;background:${isAllPaid?'var(--surface2)':'var(--surface)'};border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:10px;">
               <span style="font-size:15px;font-weight:600;">${v}</span>
@@ -88,7 +88,7 @@ function renderMonthly() {
   }).join('');
 
   const totalRow = `
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1.5rem;padding:.75rem 1.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:.5rem;">
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1.5rem;padding:.75rem 1.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:14px;margin-top:.5rem;">
       <span style="font-size:13px;color:var(--text2);">本月合計</span>
       <span style="font-size:22px;font-weight:600;">$${total.toLocaleString()}</span>
     </div>`;
@@ -96,17 +96,18 @@ function renderMonthly() {
   document.getElementById('monthly-table').innerHTML = vendorBlocks + totalRow;
 }
 
-function printMonthly() {
-  if (!document.getElementById('monthly-table').innerHTML.trim()) { alert('請先選擇月份並按查詢'); return; }
+async function printMonthly() {
+  if (!document.getElementById('monthly-table').innerHTML.trim()) { showAlert('提示', '請先選擇月份並按查詢'); return; }
   const ym = document.getElementById('monthly-month').value;
   const [y, m] = ym.split('-');
 
-  const printer = prompt(
+  const printer = await showPrompt(
+    '列印進貨報表',
     `確認列印【惟元門市 ${y} 年 ${parseInt(m)} 月 進貨報表】\n\n請確認資料無誤後，輸入列印人姓名：`,
-    ''
+    '', '請輸入姓名'
   );
   if (printer === null) return;
-  if (!printer.trim()) { alert('請填寫列印人姓名'); return; }
+  if (!printer.trim()) { showAlert('提示', '請填寫列印人姓名'); return; }
 
   const now = new Date();
   const printTime = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -221,15 +222,14 @@ function printMonthly() {
 
 async function batchMarkPaid() {
   const ym = document.getElementById('monthly-month').value;
-  if (!ym) { alert('請先選擇月份並查詢'); return; }
-  if (!supabaseReady) { alert('目前為離線模式，無法批次更新'); return; }
+  if (!ym) { showAlert('提示', '請先選擇月份並查詢'); return; }
+  if (!supabaseReady) { showAlert('離線模式', '目前為離線模式，無法批次更新'); return; }
 
   const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
   if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
-  const confirmed = confirm(
-    '【本月全數標記付款】\n\n' +
+  const confirmed = await showConfirm('本月全數標記付款',
     '月份：' + ym + '\n' +
     '未付款筆數：' + unpaidList.length + ' 筆\n' +
     '未付款總額：$' + total.toLocaleString() + '\n\n' +
@@ -237,7 +237,7 @@ async function batchMarkPaid() {
   );
   if (!confirmed) return;
 
-  const paidDate = prompt('請輸入付款日期：', today());
+  const paidDate = await showPrompt('付款日期', '請輸入付款日期', today());
   if (!paidDate || !paidDate.trim()) return;
 
   const btn = document.querySelector('.btn-success.no-print');
@@ -278,7 +278,7 @@ async function batchMarkPaid() {
   renderOrders();
   renderMonthly();
   if (failed > 0) {
-    alert('完成：' + done + ' 筆成功，' + failed + ' 筆失敗，請查看 F12 Console 了解詳情');
+    showAlert('批次付款結果', '完成：' + done + ' 筆成功，' + failed + ' 筆失敗\n請查看 F12 Console 了解詳情');
   } else {
     toast('✓ 已標記 ' + done + ' 筆訂單為已付款');
   }

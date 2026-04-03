@@ -154,7 +154,7 @@
   <!-- 歷史價格查詢 -->
   <div id="sec-price" class="section">
     <div class="card">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1rem;">查詢歷史採購價格</div>
+      <div class="section-title">查詢歷史採購價格</div>
       <div style="display:flex;gap:8px;margin-bottom:1rem;">
         <input type="text" id="price-search" placeholder="輸入商品名稱（如：北耆王、天麻、枸杞…）" style="flex:1;" oninput="renderPriceSearch()">
         <select id="price-vendor" onchange="renderPriceSearch()" style="width:160px;">
@@ -168,7 +168,7 @@
   <!-- 貨到付款查帳 -->
   <div id="sec-cod" class="section">
     <div class="card">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:1.25rem;">新增代收款記錄</div>
+      <div class="section-title">新增代收款記錄</div>
       <div class="form-grid">
         <div class="form-group"><label>寄件日期 *</label><input type="date" id="cod-send-date"></div>
         <div class="form-group"><label>收件人 *</label><input type="text" id="cod-recipient" placeholder="例：王小明"></div>
@@ -186,7 +186,7 @@
 
     <div class="card" style="margin-top:1rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div style="font-size:13px;font-weight:500;color:var(--text2);">代收款記錄</div>
+        <div class="section-title" style="margin-bottom:0;">代收款記錄</div>
         <div style="display:flex;gap:8px;align-items:center;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
             <input type="checkbox" id="cod-show-uncollected" onchange="renderCodList()">
@@ -201,6 +201,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 自訂對話框（取代原生 alert/confirm/prompt）-->
+<div class="modal-bg" id="dialog-bg" style="display:none;" onclick="if(event.target===this)_dialogCancel()">
+  <div class="modal" style="width:380px;">
+    <h3 id="dialog-title"></h3>
+    <div id="dialog-body" style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-line;"></div>
+    <div id="dialog-input-wrap" style="display:none;margin-top:.75rem;">
+      <input type="text" id="dialog-input">
+    </div>
+    <div class="modal-actions" id="dialog-actions"></div>
+  </div>
+</div>
 
 <div class="modal-bg" id="modal-bg" style="display:none;">
   <div class="modal">
@@ -223,6 +235,7 @@
 
 <datalist id="vendor-list"></datalist>
 
+<script src="js/dialog.js"></script>
 <script src="js/data.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/utils.js"></script>
