@@ -39,15 +39,15 @@ function renderOrders() {
     return `<tr class="order-row" onclick="showDetail('${o.id}')" title="點擊查看詳情">
       <td>${o.date}</td>
       <td class="mono">${o.orderId||'—'}</td>
-      <td style="font-weight:500;">${o.vendor}</td>
+      <td class="font-medium">${o.vendor}</td>
       <td>
         <span>${itemSummary}</span>
-        ${o.items.length>1?`<span style="font-size:11px;color:var(--blue);margin-left:6px;">▶ ${o.items.length} 項</span>`:''}
-        ${o.note?`<span style="font-size:11px;color:var(--text3);margin-left:6px;">📝</span>`:''}
+        ${o.items.length>1?`<span class="text-[11px] text-info ml-1.5">▶ ${o.items.length} 項</span>`:''}
+        ${o.note?`<span class="text-[11px] text-txt-3 ml-1.5">📝</span>`:''}
       </td>
-      <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+      <td class="font-semibold">$${o.total.toLocaleString()}</td>
       <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
-      <td style="color:var(--text3);font-size:12px;">${o.paidDate||'—'}</td>
+      <td class="text-txt-3 text-xs">${o.paidDate||'—'}</td>
     </tr>`;
   }).join('');
 }
@@ -101,13 +101,13 @@ function renderDetail(id, editMode) {
   const itemRows = o.items.map(i => {
     const sub = Math.round(i.qty * i.price);
     const isNeg = sub < 0;
-    const color = isNeg ? 'color:#e53e3e;' : '';
+    const negCls = isNeg ? 'text-err' : '';
     return `
-    <tr style="${isNeg ? 'background:rgba(229,62,62,.04);' : ''}">
-      <td style="font-weight:500;${color}">${i.name}</td>
-      <td style="text-align:right;${color}">${i.qty} ${i.unit||'斤'}</td>
-      <td style="text-align:right;${color}">$${i.price.toLocaleString()}</td>
-      <td style="text-align:right;font-weight:600;${color}">
+    <tr class="${isNeg ? 'bg-err/5' : ''}">
+      <td class="font-medium ${negCls}">${i.name}</td>
+      <td class="text-right ${negCls}">${i.qty} ${i.unit||'斤'}</td>
+      <td class="text-right ${negCls}">$${i.price.toLocaleString()}</td>
+      <td class="text-right font-semibold ${negCls}">
         $${sub.toLocaleString()}
       </td>
     </tr>`;
@@ -116,11 +116,11 @@ function renderDetail(id, editMode) {
   document.getElementById('detail-content').innerHTML = `
     <div class="detail-header">
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div class="flex items-center gap-2 mb-1">
           <h3>${o.vendor}</h3>
           ${isRefund?'<span class="refund-badge">↩ 退換貨</span>':''}
         </div>
-        <div style="font-size:13px;color:var(--text2);">${o.date}　<span class="mono" style="font-size:12px;">${o.orderId||'—'}</span></div>
+        <div class="text-[13px] text-txt-2">${o.date}　<span class="mono text-xs">${o.orderId||'—'}</span></div>
       </div>
       <div class="kebab-wrap">
         <button class="kebab-btn" onclick="toggleKebab(event)">···</button>
@@ -138,15 +138,15 @@ function renderDetail(id, editMode) {
       ${o.paidDate?`<div class="detail-meta-item"><div class="detail-meta-label">付款日期</div><div class="detail-meta-value">${o.paidDate}</div></div>`:''}
       ${o.payMethod?`<div class="detail-meta-item"><div class="detail-meta-label">付款方式</div><div class="detail-meta-value">${o.payMethod}</div></div>`:''}
       ${o.payNote?`<div class="detail-meta-item"><div class="detail-meta-label">付款備註</div><div class="detail-meta-value">${o.payNote}</div></div>`:''}
-      ${o.note?`<div class="detail-meta-item" style="grid-column:1/-1;"><div class="detail-meta-label">訂單備註</div><div class="detail-meta-value">${o.note}</div></div>`:''}
+      ${o.note?`<div class="detail-meta-item col-span-full"><div class="detail-meta-label">訂單備註</div><div class="detail-meta-value">${o.note}</div></div>`:''}
     </div>
     <table class="detail-items-table">
-      <thead><tr><th>商品名稱</th><th style="text-align:right;">數量</th><th style="text-align:right;">單價</th><th style="text-align:right;">小計</th></tr></thead>
+      <thead><tr><th>商品名稱</th><th class="text-right">數量</th><th class="text-right">單價</th><th class="text-right">小計</th></tr></thead>
       <tbody>${itemRows}</tbody>
     </table>
     <div class="detail-total">
-      <span style="font-size:13px;color:var(--text2);">${isRefund?'退款金額':'訂單總金額'}</span>
-      <span style="font-size:22px;font-weight:600;letter-spacing:-.02em;${isRefund?'color:var(--red);':''}">
+      <span class="text-[13px] text-txt-2">${isRefund?'退款金額':'訂單總金額'}</span>
+      <span class="text-[22px] font-semibold tracking-tight ${isRefund?'text-err':''}">
         ${isRefund?'－':''}$${o.total.toLocaleString()}
       </span>
     </div>`;
@@ -163,28 +163,28 @@ function renderEditDetail(o) {
       <input type="number" value="${item.price}" id="eprice-${idx}" min="0" oninput="recalcEdit()">
       <input type="number" value="${item.qty}" id="eqty-${idx}" min="0" step="0.01" oninput="recalcEdit()">
       <select id="eunit-${idx}">${['斤','公斤','兩','個','包','罐','盒'].map(u=>`<option ${(item.unit||'斤')===u?'selected':''}>${u}</option>`).join('')}</select>
-      <input type="text" id="esub-${idx}" readonly value="$${Math.round(item.qty*item.price).toLocaleString()}" style="background:var(--surface2);color:var(--text2);">
+      <input type="text" id="esub-${idx}" readonly value="$${Math.round(item.qty*item.price).toLocaleString()}" class="bg-surface-2 text-txt-2">
       <button class="remove-btn" onclick="removeEditItem(${idx})">✕</button>
     </div>`).join('');
 
   document.getElementById('detail-content').innerHTML = `
-    <div class="detail-header" style="margin-bottom:1rem;">
-      <h3 style="font-size:15px;">編輯訂單</h3>
+    <div class="detail-header mb-4">
+      <h3 class="text-[15px]">編輯訂單</h3>
       <button class="btn btn-sm btn-ghost" onclick="renderDetail('${o.id}',false)">✕ 取消</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem;">
+    <div class="grid grid-cols-3 gap-2.5 mb-4">
       <div class="form-group"><label>日期</label><input type="date" id="e-date" value="${o.date}"></div>
       <div class="form-group"><label>訂單編號</label><input type="text" id="e-orderid" value="${o.orderId||''}"></div>
       <div class="form-group"><label>廠商</label><input type="text" id="e-vendor" value="${o.vendor}" list="vendor-list"></div>
     </div>
-    <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.01em;margin-bottom:6px;">商品明細</div>
-    <div style="display:grid;grid-template-columns:2fr 1fr 0.8fr 0.7fr 1fr 28px;gap:6px;margin-bottom:5px;">
-      ${['商品名稱','單價','數量','單位','小計',''].map(h=>`<span style="font-size:11px;color:var(--text3);">${h}</span>`).join('')}
+    <div class="text-xs font-semibold text-txt-2 tracking-tight mb-1.5">商品明細</div>
+    <div class="grid grid-cols-[2fr_1fr_0.8fr_0.7fr_1fr_28px] gap-1.5 mb-1">
+      ${['商品名稱','單價','數量','單位','小計',''].map(h=>`<span class="text-[11px] text-txt-3">${h}</span>`).join('')}
     </div>
     <div id="edit-items-container">${itemsHtml}</div>
-    <button class="btn btn-sm" onclick="addEditItemRow()" style="margin:6px 0 1rem;">+ 新增品項</button>
-    <div style="height:1px;background:var(--border);margin-bottom:1rem;"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;">
+    <button class="btn btn-sm my-1.5 mb-4" onclick="addEditItemRow()">+ 新增品項</button>
+    <div class="h-px bg-border mb-4"></div>
+    <div class="grid grid-cols-2 gap-2.5 mb-4">
       <div class="form-group"><label>付款狀態</label>
         <select id="e-status">
           <option value="pending" ${o.status==='pending'?'selected':''}>未付款</option>
@@ -200,11 +200,11 @@ function renderEditDetail(o) {
       </div>
       <div class="form-group"><label>付款備註</label><input type="text" id="e-paynote" value="${o.payNote||''}"></div>
     </div>
-    <div class="form-group" style="margin-bottom:1rem;"><label>訂單備註</label>
-      <textarea id="e-note" style="height:70px;resize:vertical;">${o.note||''}</textarea>
+    <div class="form-group mb-4"><label>訂單備註</label>
+      <textarea id="e-note" class="h-[70px] resize-y">${o.note||''}</textarea>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:13px;color:var(--text2);">訂單總金額：<strong id="edit-total">$${o.total.toLocaleString()}</strong></div>
+    <div class="flex justify-between items-center">
+      <div class="text-[13px] text-txt-2">訂單總金額：<strong id="edit-total">$${o.total.toLocaleString()}</strong></div>
     </div>`;
 
   document.getElementById('detail-actions').innerHTML = `
@@ -225,7 +225,7 @@ function addEditItemRow() {
     <input type="number" placeholder="0" id="eprice-${idx}" min="0" oninput="recalcEdit()">
     <input type="number" placeholder="1" id="eqty-${idx}" min="0" step="0.01" value="1" oninput="recalcEdit()">
     <select id="eunit-${idx}">${['斤','公斤','兩','個','包','罐','盒'].map(u=>`<option>${u}</option>`).join('')}</select>
-    <input type="text" id="esub-${idx}" readonly placeholder="—" style="background:var(--surface2);color:var(--text2);">
+    <input type="text" id="esub-${idx}" readonly placeholder="—" class="bg-surface-2 text-txt-2">
     <button class="remove-btn" onclick="removeEditItem('${idx}')">✕</button>`;
   document.getElementById('edit-items-container').appendChild(div);
 }

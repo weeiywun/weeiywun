@@ -89,10 +89,10 @@ function renderVendorTotalCard() {
   }
   const d = map[currentVendor];
   document.getElementById('vendor-total-card').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);">
-      <span style="font-size:13px;font-weight:600;color:var(--text);">${currentVendor}</span>
-      <span style="font-size:13px;color:var(--text2);">累計 <b>${d.orders.length}</b> 筆</span>
-      <span style="font-size:16px;font-weight:600;">$${d.total.toLocaleString()}</span>
+    <div class="card flex justify-between items-center py-3.5 px-5">
+      <span class="text-[13px] font-semibold text-txt">${currentVendor}</span>
+      <span class="text-[13px] text-txt-2">累計 <b>${d.orders.length}</b> 筆</span>
+      <span class="text-base font-semibold">$${d.total.toLocaleString()}</span>
     </div>`;
 }
 
@@ -127,14 +127,14 @@ function renderVendorContent() {
   const unpaidTotal       = names.reduce((s,v) => s + map[v].unpaid, 0);
 
   document.getElementById('vendor-summary-bar').innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;">
-      <div style="font-size:12px;color:var(--text2);font-weight:500;letter-spacing:.01em;margin-bottom:.75rem;">
+    <div class="card p-4 px-5 mb-4">
+      <div class="text-xs text-txt-2 font-medium tracking-tight mb-3">
         ${rangeText}　共 ${names.length} 家廠商
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">未付款筆數</div><div style="font-size:22px;font-weight:600;color:var(--amber);">${unpaidOrderCount} 筆</div></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">未付款廠商</div><div style="font-size:22px;font-weight:600;color:var(--amber);">${unpaidVendorCount} 家</div></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">未付款總額</div><div style="font-size:22px;font-weight:600;color:var(--amber);">$${unpaidTotal.toLocaleString()}</div></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><div class="text-[11px] text-txt-3 mb-0.5">未付款筆數</div><div class="text-[22px] font-semibold text-warn">${unpaidOrderCount} 筆</div></div>
+        <div><div class="text-[11px] text-txt-3 mb-0.5">未付款廠商</div><div class="text-[22px] font-semibold text-warn">${unpaidVendorCount} 家</div></div>
+        <div><div class="text-[11px] text-txt-3 mb-0.5">未付款總額</div><div class="text-[22px] font-semibold text-warn">$${unpaidTotal.toLocaleString()}</div></div>
       </div>
     </div>`;
 
@@ -146,26 +146,26 @@ function renderVendorContent() {
       <tr class="order-row" onclick="showDetail('${o.id}')">
         <td>${o.date}</td>
         <td class="mono">${o.orderId||'—'}</td>
-        <td style="color:var(--text2);font-size:12px;">${o.items.map(i => {
+        <td class="text-txt-2 text-xs">${o.items.map(i => {
             const isNeg = Math.round(i.qty * i.price) < 0;
-            return isNeg ? `<span style="color:#e53e3e;">↩${i.name}</span>` : i.name;
+            return isNeg ? `<span class="text-err">↩${i.name}</span>` : i.name;
           }).join('、')}</td>
-        <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+        <td class="font-semibold">$${o.total.toLocaleString()}</td>
         <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
-        <td style="font-size:12px;color:var(--text3);">${o.paidDate||'—'}</td>
+        <td class="text-xs text-txt-3">${o.paidDate||'—'}</td>
       </tr>`).join('');
   }
 
   const unpaidCard = unpaidOrders.length > 0 ? `
-    <div class="vendor-card" style="border-color:var(--amber);margin-bottom:1rem;">
-      <div class="vendor-header" style="background:rgba(245,158,11,.06);">
+    <div class="vendor-card border-warn mb-4">
+      <div class="vendor-header bg-warn/5">
         <div>
           <div class="vendor-name">${currentVendor}</div>
-          <div class="vendor-meta" style="color:var(--amber);">未付款　${unpaidOrders.length} 筆</div>
+          <div class="vendor-meta text-warn">未付款　${unpaidOrders.length} 筆</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:var(--amber);margin-bottom:4px;">未付款總額</div>
-          <div style="font-size:22px;font-weight:600;color:var(--amber);margin-bottom:8px;">$${d.unpaid.toLocaleString()}</div>
+        <div class="text-right">
+          <div class="text-[11px] text-warn mb-1">未付款總額</div>
+          <div class="text-[22px] font-semibold text-warn mb-2">$${d.unpaid.toLocaleString()}</div>
           <button class="btn btn-sm btn-success" onclick="batchMarkVendorPaid('${currentVendor.replace(/'/g,"\\'")}')">✓ 標記此廠商全部付清</button>
         </div>
       </div>
@@ -176,20 +176,20 @@ function renderVendorContent() {
         </table>
       </div>
     </div>` : `
-    <div style="padding:.85rem 1.25rem;margin-bottom:1rem;background:rgba(34,197,94,.06);border:1px solid var(--green);border-radius:14px;font-size:13px;color:var(--green);font-weight:500;">
+    <div class="py-3.5 px-5 mb-4 bg-ok/5 border border-ok rounded-card text-[13px] text-ok font-medium">
       ✓ ${currentVendor} 無未付款訂單
     </div>`;
 
   const paidCard = paidOrders.length > 0 ? `
-    <div class="vendor-card" style="opacity:.85;">
+    <div class="vendor-card opacity-85">
       <div class="vendor-header">
         <div>
-          <div class="vendor-name" style="color:var(--text2);">${currentVendor}</div>
+          <div class="vendor-name text-txt-2">${currentVendor}</div>
           <div class="vendor-meta">已付款　${paidOrders.length} 筆</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">已付款總額</div>
-          <div style="font-size:20px;font-weight:600;color:var(--green);">$${d.paid.toLocaleString()}</div>
+        <div class="text-right">
+          <div class="text-[11px] text-txt-3 mb-0.5">已付款總額</div>
+          <div class="text-xl font-semibold text-ok">$${d.paid.toLocaleString()}</div>
         </div>
       </div>
       <div class="table-wrap">

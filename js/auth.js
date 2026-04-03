@@ -22,12 +22,12 @@
     if (val === PWD) {
       localStorage.setItem(KEY, JSON.stringify({ ok: true }));
       localStorage.removeItem(EMPLOYEE_KEY);
-      document.getElementById('auth-overlay').style.display = 'none';
+      document.getElementById('auth-overlay').classList.add('hidden');document.getElementById('auth-overlay').classList.remove('flex');
       document.getElementById('auth-input').value = '';
     } else if (val === EMPLOYEE_PWD) {
       localStorage.setItem(EMPLOYEE_KEY, JSON.stringify({ ok: true }));
       localStorage.removeItem(KEY);
-      document.getElementById('auth-overlay').style.display = 'none';
+      document.getElementById('auth-overlay').classList.add('hidden');document.getElementById('auth-overlay').classList.remove('flex');
       document.getElementById('auth-input').value = '';
       applyEmployeeMode();
     } else {
@@ -51,14 +51,14 @@
   window.isEmployeeMode = function() { return !!window._employeeMode; };
 
   if (isEmployee()) {
-    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('auth-overlay').classList.add('hidden');document.getElementById('auth-overlay').classList.remove('flex');
     window._employeeMode = true;
     document.addEventListener('DOMContentLoaded', applyEmployeeMode);
     if (document.readyState !== 'loading') applyEmployeeMode();
   } else if (isAuthed()) {
-    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('auth-overlay').classList.add('hidden');document.getElementById('auth-overlay').classList.remove('flex');
   } else {
-    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('auth-overlay').classList.remove('hidden');document.getElementById('auth-overlay').classList.add('flex');
     setTimeout(() => document.getElementById('auth-input').focus(), 100);
   }
 })();

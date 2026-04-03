@@ -8,13 +8,13 @@ function _dialogShow(title, body, inputs, buttons) {
   const inputWrap = document.getElementById('dialog-input-wrap');
   const inputEl = document.getElementById('dialog-input');
   if (inputs) {
-    inputWrap.style.display = 'block';
+    inputWrap.classList.remove('hidden');
     inputEl.type = inputs.type || 'text';
     inputEl.value = inputs.value || '';
     inputEl.placeholder = inputs.placeholder || '';
     setTimeout(() => { inputEl.focus(); inputEl.select(); }, 60);
   } else {
-    inputWrap.style.display = 'none';
+    inputWrap.classList.add('hidden');
     inputEl.value = '';
   }
 
@@ -41,7 +41,7 @@ function _dialogHide() {
 
 function _dialogOk() {
   const inputWrap = document.getElementById('dialog-input-wrap');
-  const val = inputWrap.style.display !== 'none'
+  const val = !inputWrap.classList.contains('hidden')
     ? document.getElementById('dialog-input').value
     : true;
   _dialogHide();
