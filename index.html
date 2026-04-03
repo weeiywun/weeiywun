@@ -236,9 +236,11 @@ tr:hover td{background:var(--bg);}
     document.querySelectorAll('.nav-tab').forEach(btn => {
       btn.style.display = btn.dataset.tab === 'cod' ? '' : 'none';
     });
-    // 隱藏 header 右側按鈕群
+    // 隱藏 header 右側按鈕群與管理員登出鍵
     const headerBtns = document.querySelector('.header-inner .no-print');
     if (headerBtns) headerBtns.style.display = 'none';
+    const adminLogout = document.getElementById('admin-logout-btn');
+    if (adminLogout) adminLogout.style.display = 'none';
     // 切換到貨到付款查帳頁
     if (typeof switchTab === 'function') switchTab('cod');
   }
@@ -269,6 +271,7 @@ tr:hover td{background:var(--bg);}
         <div class="logo-sub" id="logo-sub-hidden" onclick="(function(){window._logoutClicks=(window._logoutClicks||0)+1;if(window._logoutClicks>=3){window._logoutClicks=0;localStorage.removeItem('ww_employee_auth');location.reload();}})()" style="cursor:default;user-select:none;">採購帳務系統 v4.7 ☁</div>
       </div>
     </a>
+    <button id="admin-logout-btn" class="btn btn-sm btn-ghost" onclick="localStorage.removeItem('ww_auth');location.reload();" style="font-size:12px;color:var(--text3);margin-left:4px;">登出</button>
     <div style="display:flex;gap:8px;align-items:center;" class="no-print">
       <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);">
         <span class="sync-dot" id="sync-dot"></span>
