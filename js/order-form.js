@@ -33,10 +33,10 @@ let formCounter = 0;
 function createOrderFormHTML(fid) {
   const today = new Date().toISOString().slice(0,10);
   return `
-  <div class="card order-form-card" id="oform-${fid}" style="position:relative;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <div style="font-size:13px;font-weight:500;color:var(--text2);">訂單 #${fid}</div>
-      <button onclick="removeOrderForm(${fid})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px;" title="移除此訂單">✕</button>
+  <div class="card order-form-card relative" id="oform-${fid}">
+    <div class="flex justify-between items-center mb-4">
+      <div class="text-[13px] font-medium text-txt-2">訂單 #${fid}</div>
+      <button onclick="removeOrderForm(${fid})" class="bg-transparent border-none cursor-pointer text-txt-3 text-base px-1.5 py-0.5" title="移除此訂單">✕</button>
     </div>
     <div class="form-grid">
       <div class="form-group">
@@ -49,52 +49,52 @@ function createOrderFormHTML(fid) {
       </div>
       <div class="form-group">
         <label>廠商名稱 *</label>
-        <div style="display:flex;gap:6px;">
-          <select id="f-vendor-sel-${fid}" onchange="onVendorSelChange(${fid})" style="flex:1;">
+        <div class="flex gap-1.5">
+          <select id="f-vendor-sel-${fid}" onchange="onVendorSelChange(${fid})" class="flex-1">
             <option value="">選擇廠商…</option>
           </select>
-          <input type="text" id="f-vendor-txt-${fid}" placeholder="或輸入新廠商" style="flex:1;display:none;">
+          <input type="text" id="f-vendor-txt-${fid}" placeholder="或輸入新廠商" class="flex-1 hidden">
         </div>
       </div>
     </div>
-    <div class="form-group" style="margin-top:10px;">
+    <div class="form-group mt-2.5">
       <label>備註</label>
       <input type="text" id="f-note-${fid}" placeholder="選填">
     </div>
 
     <!-- 商品明細 -->
-    <div style="margin-top:1rem;">
-      <div class="items-header" style="display:grid;grid-template-columns:2.2fr 0.8fr 0.7fr 1fr 1fr 32px;gap:7px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">商品名稱</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">數量</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">單位</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">單價（元）</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.01em;">小計</span>
+    <div class="mt-4">
+      <div class="items-header">
+        <span class="text-[11px] font-semibold text-txt-3 tracking-tight">商品名稱</span>
+        <span class="text-[11px] font-semibold text-txt-3 tracking-tight">數量</span>
+        <span class="text-[11px] font-semibold text-txt-3 tracking-tight">單位</span>
+        <span class="text-[11px] font-semibold text-txt-3 tracking-tight">單價（元）</span>
+        <span class="text-[11px] font-semibold text-txt-3 tracking-tight">小計</span>
         <span></span>
       </div>
       <div id="items-container-${fid}"></div>
-      <button class="btn btn-sm" onclick="addItemRowTo(${fid})" style="margin-top:8px;">+ 新增品項</button>
-      <div style="text-align:right;margin-top:.75rem;">
-        <div style="font-size:12px;color:var(--text2);">訂單總金額</div>
+      <button class="btn btn-sm mt-2" onclick="addItemRowTo(${fid})">+ 新增品項</button>
+      <div class="text-right mt-3">
+        <div class="text-xs text-txt-2">訂單總金額</div>
         <div class="order-total-amount" id="order-total-${fid}">$0</div>
       </div>
     </div>
 
     <!-- 付款 -->
-    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="f-paid-${fid}" onchange="togglePaidFieldsFor(${fid})" style="width:16px;height:16px;cursor:pointer;">
-          <span style="font-size:13px;font-weight:500;">此訂單已付款</span>
+    <div class="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2.5">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="f-paid-${fid}" onchange="togglePaidFieldsFor(${fid})" class="cursor-pointer">
+          <span class="text-[13px] font-medium">此訂單已付款</span>
         </label>
-        <div id="paid-fields-${fid}" style="display:none;flex-direction:column;gap:10px;">
+        <div id="paid-fields-${fid}" class="hidden flex-col gap-2.5">
           <div class="form-group">
             <label>付款日期</label>
             <input type="date" id="f-paid-date-${fid}" value="${today}">
           </div>
           <div class="form-group">
             <label>付款方式</label>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;">
+            <div class="flex flex-wrap gap-1.5 mt-0.5">
               ${['現金','支票','匯款','月結','信用卡','貨到付款'].map(m=>`
               <label class="pay-chip" data-fid="${fid}"><input type="radio" name="paymethod-${fid}" value="${m}" style="display:none;">${m}</label>`).join('')}
             </div>
@@ -107,7 +107,7 @@ function createOrderFormHTML(fid) {
       </div>
       <div class="form-group">
         <label>訂單備註</label>
-        <textarea id="f-order-note-${fid}" placeholder="退貨紀錄、折扣說明…" style="height:90px;resize:vertical;"></textarea>
+        <textarea id="f-order-note-${fid}" placeholder="退貨紀錄、折扣說明…" class="h-[90px] resize-y"></textarea>
       </div>
     </div>
   </div>`;
@@ -145,10 +145,10 @@ function onVendorSelChange(fid) {
   const sel = document.getElementById('f-vendor-sel-' + fid);
   const txt = document.getElementById('f-vendor-txt-' + fid);
   if (sel.value === '__new__') {
-    txt.style.display = 'block';
+    txt.classList.remove('hidden');
     txt.focus();
   } else {
-    txt.style.display = 'none';
+    txt.classList.add('hidden');
   }
 }
 
@@ -162,7 +162,9 @@ function getVendorForForm(fid) {
 
 function togglePaidFieldsFor(fid) {
   const checked = document.getElementById('f-paid-' + fid).checked;
-  document.getElementById('paid-fields-' + fid).style.display = checked ? 'flex' : 'none';
+  const el = document.getElementById('paid-fields-' + fid);
+  if (checked) { el.classList.remove('hidden'); el.classList.add('flex'); }
+  else { el.classList.add('hidden'); el.classList.remove('flex'); }
 }
 
 let itemCounters = {};

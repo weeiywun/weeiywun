@@ -129,7 +129,7 @@ async function deleteCodRecord(id) {
 async function renderCodList() {
   const container = document.getElementById('cod-list');
   if (!container) return;
-  container.innerHTML = '<div style="padding:1rem;color:var(--text3);font-size:13px;">載入中…</div>';
+  container.innerHTML = '<div class="p-4 text-txt-3 text-[13px]">載入中…</div>';
 
   try {
     const data = await _codFetch('cod_records?select=*&order=send_date.desc');
@@ -153,16 +153,16 @@ async function renderCodList() {
     const uncollectedCount = all.filter(r => !r.collected).length;
 
     const overdueHTML = overdue.length > 0 ? `
-      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:13px;">
-        <div style="font-weight:600;color:#856404;margin-bottom:.35rem;">⚠️ ${overdue.length} 筆款項已超過預計到帳日</div>
-        ${overdue.map(r => `<div style="color:#856404;font-size:12px;margin-top:2px;">・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}</div>`).join('')}
+      <div class="bg-warn-bg border border-warn rounded-lg py-3.5 px-4 mb-4 text-[13px]">
+        <div class="font-semibold text-warn mb-1">⚠️ ${overdue.length} 筆款項已超過預計到帳日</div>
+        ${overdue.map(r => `<div class="text-warn text-xs mt-0.5">・${r.recipient}　$${r.amount.toLocaleString()}　預計 ${r.expectedDate}</div>`).join('')}
       </div>` : '';
 
     const statsHTML = `
       ${overdueHTML}
-      <div style="display:flex;gap:1.5rem;padding:.75rem 1rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;font-size:13px;">
-        <div><span style="color:var(--text3);">待到帳筆數　</span><span style="font-weight:600;color:var(--amber);">${uncollectedCount} 筆</span></div>
-        <div><span style="color:var(--text3);">待到帳總額　</span><span style="font-weight:600;color:var(--amber);">$${totalUncollected.toLocaleString()}</span></div>
+      <div class="flex gap-6 py-3 px-4 bg-surface-2 rounded-lg mb-4 text-[13px]">
+        <div><span class="text-txt-3">待到帳筆數　</span><span class="font-semibold text-warn">${uncollectedCount} 筆</span></div>
+        <div><span class="text-txt-3">待到帳總額　</span><span class="font-semibold text-warn">$${totalUncollected.toLocaleString()}</span></div>
       </div>`;
 
     if (records.length === 0) {
@@ -178,49 +178,49 @@ async function renderCodList() {
             const showAmt = actual != null ? actual : r.amount;
             const diff = actual != null ? actual - r.amount : 0;
             const diffStr = diff !== 0
-              ? ` <span style="color:${diff<0?'#e53e3e':'var(--green)'};">(${diff>0?'+':''}$${diff.toLocaleString()})</span>`
+              ? ` <span class="${diff<0?'text-err':'text-ok'}">(${diff>0?'+':''}$${diff.toLocaleString()})</span>`
               : '';
-            return `<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ 已到帳 $${showAmt.toLocaleString()}${diffStr}</div>
-                    <div style="font-size:11px;color:var(--text3);">${r.collectedDate}</div>`;
+            return `<div class="text-[11px] text-ok mt-0.5">✓ 已到帳 $${showAmt.toLocaleString()}${diffStr}</div>
+                    <div class="text-[11px] text-txt-3">${r.collectedDate}</div>`;
           })()
-        : `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--amber)'};margin-top:2px;">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`;
+        : `<div class="text-[11px] ${isOverdue?'text-err':'text-warn'} mt-0.5">${isOverdue?'⚠️ 已逾期':'待到帳'}</div>`;
 
       return `
-        <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:10px;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--border);${r.collected?'opacity:.5;':''}${isOverdue?'background:rgba(255,193,7,.06);':''}">
+        <div class="grid grid-cols-[1fr_1fr_1.2fr_1fr_auto] gap-2.5 items-center py-3.5 px-4 border-b border-border ${r.collected?'opacity-50':''} ${isOverdue?'bg-warn/5':''}">
           <div>
-            <div style="font-size:12px;color:var(--text3);">寄件日</div>
-            <div style="font-size:13px;font-weight:500;">${r.sendDate}</div>
-            ${r.expectedDate ? `<div style="font-size:11px;color:${isOverdue?'#e53e3e':'var(--text3)'};margin-top:2px;">預計入帳 ${r.expectedDate}</div>` : ''}
+            <div class="text-xs text-txt-3">寄件日</div>
+            <div class="text-[13px] font-medium">${r.sendDate}</div>
+            ${r.expectedDate ? `<div class="text-[11px] ${isOverdue?'text-err':'text-txt-3'} mt-0.5">預計入帳 ${r.expectedDate}</div>` : ''}
           </div>
           <div>
-            <div style="font-size:12px;color:var(--text3);">收件人</div>
-            <div style="font-size:13px;font-weight:500;">${r.recipient}</div>
-            ${r.note ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${r.note}</div>` : ''}
+            <div class="text-xs text-txt-3">收件人</div>
+            <div class="text-[13px] font-medium">${r.recipient}</div>
+            ${r.note ? `<div class="text-[11px] text-txt-3 mt-0.5">${r.note}</div>` : ''}
           </div>
           <div>
-            <div style="font-size:12px;color:var(--text3);">物流編號</div>
-            <div style="font-size:13px;font-family:monospace;">${r.tracking}</div>
+            <div class="text-xs text-txt-3">物流編號</div>
+            <div class="text-[13px] font-mono">${r.tracking}</div>
           </div>
           <div>
-            <div style="font-size:12px;color:var(--text3);">收款金額</div>
-            <div style="font-size:15px;font-weight:600;">$${r.amount.toLocaleString()}</div>
+            <div class="text-xs text-txt-3">收款金額</div>
+            <div class="text-[15px] font-semibold">$${r.amount.toLocaleString()}</div>
             ${collectedLabel}
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <div class="flex flex-col gap-1.5 items-end">
             ${!r.collected ? `<button class="btn btn-sm btn-success" onclick="confirmCodCollected('${r.id}')">確認到帳</button>` : ''}
-            ${window.isEmployeeMode && window.isEmployeeMode() ? '' : `<button class="btn btn-sm" style="font-size:11px;color:var(--text3);" onclick="deleteCodRecord('${r.id}')">刪除</button>`}
+            ${window.isEmployeeMode && window.isEmployeeMode() ? '' : `<button class="btn btn-sm text-[11px] text-txt-3" onclick="deleteCodRecord('${r.id}')">刪除</button>`}
           </div>
         </div>`;
     }).join('');
 
     container.innerHTML = statsHTML + `
-      <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;">${rows}</div>`;
+      <div class="border border-border rounded-card overflow-hidden">${rows}</div>`;
 
   } catch (e) {
     console.error('載入代收款紀錄失敗:', e);
-    container.innerHTML = `<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:8px;">
+    container.innerHTML = `<div class="text-err bg-err-bg border border-err/30 p-4 rounded-lg">
       <strong>載入失敗：</strong><br>${e.message}<br>
-      <span style="font-size:12px;color:#991b1b;">請確認 Supabase 中是否有 cod_records 資料表，以及 API 快取是否已刷新。</span>
+      <span class="text-xs text-err">請確認 Supabase 中是否有 cod_records 資料表，以及 API 快取是否已刷新。</span>
     </div>`;
   }
 }
@@ -236,15 +236,15 @@ async function checkCodAlert() {
     const totalAmt = overdue.reduce((s, r) => s + r.amount, 0);
     const div = document.createElement('div');
     div.id = 'cod-alert-modal';
-    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:center;justify-content:center;';
+    div.className = 'fixed inset-0 bg-black/45 z-[8000] flex items-center justify-center';
     div.innerHTML = `
-      <div style="background:#fff;border-radius:14px;padding:2rem;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="font-size:18px;font-weight:700;margin-bottom:.5rem;">⚠️ 貨到付款到帳提醒</div>
-        <div style="font-size:13px;color:#666;margin-bottom:1.25rem;">以下 ${overdue.length} 筆款項已超過預計入帳日，共 <strong>$${totalAmt.toLocaleString()}</strong></div>
-        <div style="background:#fff8e1;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.25rem;font-size:13px;line-height:2;">
-          ${overdue.map(r => `<div>・<strong>${r.recipient}</strong>　$${r.amount.toLocaleString()}　<span style="color:#999;">預計 ${r.expectedDate}</span></div>`).join('')}
+      <div class="bg-surface rounded-card p-8 w-[400px] max-w-[90vw] shadow-lg">
+        <div class="text-lg font-bold mb-2">⚠️ 貨到付款到帳提醒</div>
+        <div class="text-[13px] text-txt-2 mb-5">以下 ${overdue.length} 筆款項已超過預計入帳日，共 <strong>$${totalAmt.toLocaleString()}</strong></div>
+        <div class="bg-warn-bg rounded-lg py-3.5 px-4 mb-5 text-[13px] leading-8">
+          ${overdue.map(r => `<div>・<strong>${r.recipient}</strong>　$${r.amount.toLocaleString()}　<span class="text-txt-3">預計 ${r.expectedDate}</span></div>`).join('')}
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <div class="flex gap-2 justify-end">
           <button onclick="document.getElementById('cod-alert-modal').remove()" class="btn">稍後處理</button>
           <button onclick="document.getElementById('cod-alert-modal').remove();switchTab('cod')" class="btn btn-primary">前往查帳</button>
         </div>

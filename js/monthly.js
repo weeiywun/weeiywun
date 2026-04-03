@@ -15,7 +15,7 @@ function renderMonthly() {
   const vendorSet = new Set(list.map(o=>o.vendor));
 
   document.getElementById('monthly-summary').innerHTML = `
-    <div class="metrics" style="margin-bottom:1.25rem;">
+    <div class="metrics mb-5">
       <div class="metric"><div class="metric-label">廠商家數</div><div class="metric-value">${vendorSet.size}</div></div>
       <div class="metric"><div class="metric-label">月份總金額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
       <div class="metric"><div class="metric-label">已付款</div><div class="metric-value ok">$${paid.toLocaleString()}</div></div>
@@ -42,40 +42,36 @@ function renderMonthly() {
     const orderRows = vd.orders
       .sort((a,b) => a.date.localeCompare(b.date))
       .map(o => `
-        <tr class="order-row" onclick="showDetail('${o.id}')" style="cursor:pointer;">
+        <tr class="order-row cursor-pointer" onclick="showDetail('${o.id}')">
           <td>${o.date}</td>
           <td class="mono">${o.orderId||'—'}</td>
-          <td style="font-size:12px;color:var(--text2);">${o.items.map(i => {
+          <td class="text-xs text-txt-2">${o.items.map(i => {
             const isNeg = Math.round(i.qty * i.price) < 0;
-            return isNeg ? `<span style="color:#e53e3e;">↩${i.name}</span>` : i.name;
+            return isNeg ? `<span class="text-err">↩${i.name}</span>` : i.name;
           }).join('、')}</td>
-          <td style="font-weight:600;">$${o.total.toLocaleString()}</td>
+          <td class="font-semibold">$${o.total.toLocaleString()}</td>
           <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'已付款':'未付款'}</span></td>
-          <td style="font-size:12px;color:var(--text3);">${o.paidDate||'—'}</td>
+          <td class="text-xs text-txt-3">${o.paidDate||'—'}</td>
           <td class="no-print">${o.status==='pending'
             ? `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();openModal('${o.id}');setTimeout(renderMonthly,600)">標記付款</button>`
             : ''}</td>
         </tr>`).join('');
 
-    const dashedTop = idx > 0
-      ? `border-top:2px dashed #bbb;margin-top:1.25rem;padding-top:1.25rem;`
-      : '';
-
     return `
-      <div style="${dashedTop}break-inside:avoid;page-break-inside:avoid;">
-        <div style="margin-bottom:.5rem;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);${isAllPaid?'opacity:.75':''}">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.25rem;background:${isAllPaid?'var(--surface2)':'var(--surface)'};border-bottom:1px solid var(--border);">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-size:15px;font-weight:600;">${v}</span>
-              <span style="font-size:12px;color:var(--text3);">${vd.orders.length} 筆訂單</span>
+      <div class="break-inside-avoid ${idx > 0 ? 'border-t-2 border-dashed border-border-2 mt-5 pt-5' : ''}">
+        <div class="mb-2 border border-border rounded-card overflow-hidden shadow-card ${isAllPaid?'opacity-75':''}">
+          <div class="flex justify-between items-center py-3.5 px-5 ${isAllPaid?'bg-surface-2':'bg-surface'} border-b border-border">
+            <div class="flex items-center gap-2.5">
+              <span class="text-[15px] font-semibold">${v}</span>
+              <span class="text-xs text-txt-3">${vd.orders.length} 筆訂單</span>
               ${isAllPaid ? '<span class="badge badge-paid">全數付清</span>' : `<span class="badge badge-pending">待付 $${vd.unpaid.toLocaleString()}</span>`}
             </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px;color:var(--text3);">本月採購</div>
-              <div style="font-size:18px;font-weight:600;">$${vd.total.toLocaleString()}</div>
+            <div class="text-right">
+              <div class="text-[11px] text-txt-3">本月採購</div>
+              <div class="text-lg font-semibold">$${vd.total.toLocaleString()}</div>
             </div>
           </div>
-          <div style="overflow-x:auto;">
+          <div class="overflow-x-auto">
             <table>
               <thead><tr>
                 <th>日期</th><th>訂單編號</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日期</th><th class="no-print">操作</th>
@@ -88,9 +84,9 @@ function renderMonthly() {
   }).join('');
 
   const totalRow = `
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1.5rem;padding:.75rem 1.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:14px;margin-top:.5rem;">
-      <span style="font-size:13px;color:var(--text2);">本月合計</span>
-      <span style="font-size:22px;font-weight:600;">$${total.toLocaleString()}</span>
+    <div class="flex justify-end items-center gap-6 py-3 px-5 bg-surface-2 border border-border rounded-card mt-2">
+      <span class="text-[13px] text-txt-2">本月合計</span>
+      <span class="text-[22px] font-semibold">$${total.toLocaleString()}</span>
     </div>`;
 
   document.getElementById('monthly-table').innerHTML = vendorBlocks + totalRow;
@@ -113,9 +109,9 @@ async function printMonthly() {
   const printTime = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   document.getElementById('print-title').innerHTML =
-    `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    `<div class="flex justify-between items-start">
       <span>惟元門市 ${y} 年 ${parseInt(m)} 月 進貨報表</span>
-      <span style="font-size:12px;font-weight:400;color:#555;text-align:right;line-height:1.6;">
+      <span class="text-xs font-normal text-txt-2 text-right leading-relaxed">
         列印人：${printer.trim()}<br>列印時間：${printTime}
       </span>
     </div>`;
@@ -161,22 +157,22 @@ async function printMonthly() {
   const tdStyle = `padding:5px 8px;border:1px solid #ddd;`;
 
   let summaryHTML = `
-    <div style="margin-bottom:1rem;">
-      <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:.5rem;letter-spacing:.05em;">未付款快速總覽</div>
-      <div style="display:flex;gap:2rem;margin-bottom:1rem;padding:.75rem 1rem;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;">
-        <div><div style="font-size:11px;color:#888;">未付款廠商</div><div style="font-size:22px;font-weight:700;">${vendorUnpaidCount} 家</div></div>
-        <div><div style="font-size:11px;color:#888;">未付款訂單</div><div style="font-size:22px;font-weight:700;">${unpaidOrderCount} 筆</div></div>
-        <div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:#888;">未付款總額</div><div style="font-size:22px;font-weight:700;">$${unpaid.toLocaleString()}</div></div>
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-txt-2 mb-2 tracking-wide">未付款快速總覽</div>
+      <div class="flex gap-8 mb-4 py-3 px-4 bg-surface-2 border border-border rounded-md">
+        <div><div class="text-[11px] text-txt-3">未付款廠商</div><div class="text-[22px] font-bold">${vendorUnpaidCount} 家</div></div>
+        <div><div class="text-[11px] text-txt-3">未付款訂單</div><div class="text-[22px] font-bold">${unpaidOrderCount} 筆</div></div>
+        <div class="ml-auto text-right"><div class="text-[11px] text-txt-3">未付款總額</div><div class="text-[22px] font-bold">$${unpaid.toLocaleString()}</div></div>
       </div>`;
 
   if (unpaidVendors.length === 0) {
-    summaryHTML += `<div style="padding:1.5rem;text-align:center;color:#4caf50;font-weight:600;font-size:15px;border:1px solid #c8e6c9;border-radius:6px;background:#f1f8e9;">✓ 本月所有廠商均已付清</div>`;
+    summaryHTML += `<div class="p-6 text-center text-ok font-semibold text-[15px] border border-ok/30 rounded-md bg-ok-bg">✓ 本月所有廠商均已付清</div>`;
   } else {
     for (const [cat, vendors] of Object.entries(catGroups)) {
       if (cat === '其他' && vendors.length === 0) continue;
       summaryHTML += `
-        <div style="margin-bottom:.75rem;">
-          <div style="font-size:12px;font-weight:600;color:#555;letter-spacing:.01em;margin-bottom:.35rem;padding-bottom:.2rem;border-bottom:1px solid #ddd;">${cat}</div>
+        <div class="mb-3">
+          <div class="text-xs font-semibold text-txt-2 tracking-tight mb-1 pb-0.5 border-b border-border">${cat}</div>
           <table style="${tableStyle}">
             ${colDefs}
             <thead>
@@ -190,14 +186,14 @@ async function printMonthly() {
             </thead>
             <tbody>
               ${vendors.length === 0
-                ? `<tr><td colspan="5" style="text-align:center;${tdStyle}color:#aaa;">— 本月無未付款 —</td></tr>`
+                ? `<tr><td colspan="5" style="text-align:center;${tdStyle}" class="text-txt-3">— 本月無未付款 —</td></tr>`
                 : vendors.map(v => {
                     const vd = vendorMap[v];
                     const unpaidOrders = vd.orders.filter(o=>o.status!=='paid');
                     return `<tr>
-                      <td style="${tdStyle}font-weight:500;">${v}</td>
+                      <td style="${tdStyle}" class="font-medium">${v}</td>
                       <td style="text-align:center;${tdStyle}">${unpaidOrders.length} 筆</td>
-                      <td style="text-align:right;${tdStyle}font-weight:600;">$${vd.unpaid.toLocaleString()}</td>
+                      <td style="text-align:right;${tdStyle}" class="font-semibold">$${vd.unpaid.toLocaleString()}</td>
                       <td style="${tdStyle}"></td>
                       <td style="${tdStyle}"></td>
                     </tr>`;

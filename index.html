@@ -9,27 +9,52 @@
 <script>
 tailwind.config = {
   corePlugins: { preflight: false },
-  important: false
+  important: false,
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)',
+        surface: { DEFAULT: 'var(--surface)', '2': 'var(--surface2)' },
+        border: { DEFAULT: 'var(--border)', '2': 'var(--border2)' },
+        txt: { DEFAULT: 'var(--text)', '2': 'var(--text2)', '3': 'var(--text3)' },
+        accent: 'var(--accent)',
+        brand: { DEFAULT: 'var(--brand)', light: 'var(--brand-light)' },
+        ok: { DEFAULT: 'var(--green)', bg: 'var(--green-bg)' },
+        warn: { DEFAULT: 'var(--amber)', bg: 'var(--amber-bg)' },
+        err: { DEFAULT: 'var(--red)', bg: 'var(--red-bg)' },
+        info: { DEFAULT: 'var(--blue)', bg: 'var(--blue-bg)' },
+      },
+      boxShadow: {
+        card: 'var(--shadow)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+      },
+      borderRadius: {
+        card: '14px',
+      },
+      fontFamily: {
+        sans: ["'Noto Sans TC'", 'sans-serif'],
+        mono: ["'JetBrains Mono'", 'monospace'],
+      },
+    },
+  },
 }
 </script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <!-- 密碼保護 -->
-<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:#faf9f7;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;">
-  <div style="background:#fff;border-radius:14px;padding:2.5rem 2rem;width:320px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);text-align:center;border:1px solid #e5e3de;">
-    <div style="width:40px;height:40px;background:#d4691a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;font-family:serif;margin:0 auto .75rem;">帳</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:.2rem;color:#1a1917;">惟元門市</div>
-    <div style="font-size:12px;color:#9e9b94;margin-bottom:1.5rem;">進貨帳務管理系統</div>
+<div id="auth-overlay" class="hidden fixed inset-0 bg-bg z-[9999] flex items-center justify-center p-4">
+  <div class="bg-surface rounded-card p-10 px-8 w-80 max-w-full shadow-lg text-center border border-border">
+    <div class="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-white text-base font-bold font-serif mx-auto mb-3">帳</div>
+    <div class="text-[15px] font-semibold mb-0.5 text-txt">惟元門市</div>
+    <div class="text-xs text-txt-3 mb-6">進貨帳務管理系統</div>
     <input type="password" id="auth-input" placeholder="密碼"
-      style="width:100%;padding:.7rem 1rem;border:1px solid #d0cec8;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;text-align:center;letter-spacing:.15em;font-family:'Noto Sans TC',sans-serif;transition:border-color .12s;"
-      onfocus="this.style.borderColor='#d4691a';this.style.boxShadow='0 0 0 3px rgba(212,105,26,.08)'"
-      onblur="this.style.borderColor='#d0cec8';this.style.boxShadow='none'"
+      class="auth-input w-full py-3 px-4 border border-border-2 rounded-md text-sm text-center tracking-[.15em] font-sans transition-colors focus:border-brand focus:ring-2 focus:ring-brand/10 outline-none"
       onkeydown="if(event.key==='Enter')checkAuth()">
-    <div id="auth-error" style="color:#dc2626;font-size:12px;margin-top:.5rem;min-height:18px;"></div>
+    <div id="auth-error" class="text-err text-xs mt-2 min-h-[18px]"></div>
     <button onclick="checkAuth()"
-      style="width:100%;margin-top:.75rem;padding:.7rem;background:#d4691a;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:.03em;transition:background .12s;font-family:'Noto Sans TC',sans-serif;"
-      onmouseover="this.style.background='#c25e16'" onmouseout="this.style.background='#d4691a'">
+      class="w-full mt-3 py-3 bg-brand text-white border-none rounded-md text-sm font-medium cursor-pointer tracking-wide font-sans transition-colors hover:bg-[#c25e16]">
       進入系統
     </button>
   </div>
@@ -46,9 +71,9 @@ tailwind.config = {
         <div class="logo-sub">採購帳務系統 v4.7</div>
       </div>
     </a>
-    <button id="admin-logout-btn" class="btn btn-sm btn-ghost" onclick="localStorage.removeItem('ww_auth');localStorage.removeItem('ww_employee_auth');location.reload();" style="font-size:12px;color:var(--text3);margin-left:4px;">登出</button>
-    <div style="display:flex;gap:8px;align-items:center;" class="no-print">
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);">
+    <button id="admin-logout-btn" class="btn btn-sm btn-ghost text-xs text-txt-3 ml-1" onclick="localStorage.removeItem('ww_auth');localStorage.removeItem('ww_employee_auth');location.reload();">登出</button>
+    <div class="flex gap-2 items-center no-print">
+      <div class="flex items-center gap-1.5 text-xs text-txt-3">
         <span class="sync-dot" id="sync-dot"></span>
         <span id="sync-text">連線中…</span>
       </div>
@@ -75,14 +100,14 @@ tailwind.config = {
 
   <!-- 訂單管理 -->
   <div id="sec-orders" class="section">
-    <div class="metrics" style="grid-template-columns:repeat(3,1fr);" id="summary-cards"></div>
+    <div class="metrics grid-cols-3" id="summary-cards"></div>
     <div class="card">
       <div class="filter-row">
-        <input type="month" id="filter-month" onchange="renderOrders()" style="width:150px;">
-        <input type="text" id="filter-vendor" placeholder="搜尋廠商…" oninput="renderOrders()" style="width:130px;">
-        <input type="text" id="filter-orderid" placeholder="訂單編號…" oninput="renderOrders()" style="width:130px;">
-        <input type="text" id="filter-item" placeholder="搜尋商品…" oninput="renderOrders()" style="width:130px;">
-        <select id="filter-status" onchange="renderOrders()" style="width:120px;">
+        <input type="month" id="filter-month" onchange="renderOrders()" class="w-[150px]">
+        <input type="text" id="filter-vendor" placeholder="搜尋廠商…" oninput="renderOrders()" class="w-[130px]">
+        <input type="text" id="filter-orderid" placeholder="訂單編號…" oninput="renderOrders()" class="w-[130px]">
+        <input type="text" id="filter-item" placeholder="搜尋商品…" oninput="renderOrders()" class="w-[130px]">
+        <select id="filter-status" onchange="renderOrders()" class="w-[120px]">
           <option value="">全部狀態</option>
           <option value="pending">未付款</option>
           <option value="paid">已付款</option>
@@ -102,69 +127,69 @@ tailwind.config = {
 
   <!-- 新增訂單 -->
   <div id="sec-add" class="section active">
-    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.25rem;" id="add-summary-cards"></div>
+    <div class="metrics grid-cols-3 mb-5" id="add-summary-cards"></div>
     <div id="order-forms-container"></div>
-    <button class="btn btn-sm" onclick="addOrderForm()" style="margin-bottom:1rem;">
+    <button class="btn btn-sm mb-4" onclick="addOrderForm()">
       + 新增一張訂單
     </button>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem;">
+    <div class="flex gap-2 justify-end mt-2">
       <button class="btn" onclick="resetAllForms()">清除全部</button>
       <button class="btn btn-primary" id="save-btn" onclick="saveAllOrders()">儲存全部訂單</button>
     </div>
-    <div id="save-msg" style="text-align:right;margin-top:8px;font-size:13px;color:var(--green);min-height:18px;"></div>
+    <div id="save-msg" class="text-right mt-2 text-[13px] text-ok min-h-[18px]"></div>
   </div>
 
   <!-- 月底結算 -->
   <div id="sec-monthly" class="section">
     <div class="print-title" id="print-title"></div>
-    <div id="print-summary-page" style="display:none;"></div>
+    <div id="print-summary-page" class="hidden"></div>
     <div class="card">
-      <div class="filter-row no-print" style="margin-bottom:1.25rem;">
-        <div class="form-group" style="flex:0 0 auto;"><label style="font-size:12px;font-weight:500;color:var(--text2);">選擇月份</label><input type="month" id="monthly-month" style="width:170px;"></div>
-        <button class="btn btn-primary" onclick="renderMonthly()" style="margin-top:16px;">查詢</button>
-        <div style="display:flex;gap:8px;margin-top:16px;margin-left:auto;">
+      <div class="filter-row no-print mb-5">
+        <div class="form-group flex-none"><label class="text-xs font-medium text-txt-2">選擇月份</label><input type="month" id="monthly-month" class="w-[170px]"></div>
+        <button class="btn btn-primary mt-4" onclick="renderMonthly()">查詢</button>
+        <div class="flex gap-2 mt-4 ml-auto">
           <button class="btn btn-success no-print" onclick="batchMarkPaid()">✓ 本月全數標記付款</button>
           <button class="btn btn-sm no-print" onclick="printMonthly()">⎙ 列印本月報表</button>
         </div>
       </div>
       <div id="monthly-summary"></div>
-      <div id="monthly-table" style="overflow-x:auto;margin-top:1rem;"></div>
+      <div id="monthly-table" class="overflow-x-auto mt-4"></div>
     </div>
   </div>
 
   <!-- 廠商彙總 -->
   <div id="sec-vendors" class="section">
-    <div style="display:flex;gap:4px;margin-bottom:0;" id="vendor-category-tabs">
+    <div class="flex gap-1 mb-0" id="vendor-category-tabs">
       <button class="vendor-cat-tab active" data-cat="中藥材" onclick="selectVendorCategory('中藥材')">中藥材</button>
       <button class="vendor-cat-tab" data-cat="包裝材" onclick="selectVendorCategory('包裝材')">包裝材</button>
       <button class="vendor-cat-tab" data-cat="其他" onclick="selectVendorCategory('其他')">其他</button>
       <button class="vendor-cat-tab" data-cat="物流" onclick="selectVendorCategory('物流')">物流</button>
       <button class="vendor-cat-tab" data-cat="大樓修繕" onclick="selectVendorCategory('大樓修繕')">大樓修繕</button>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-      <input type="text" id="vendor-search" placeholder="搜尋廠商…" oninput="renderVendorTabs()" style="width:150px;">
-      <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
-      <span style="font-size:12px;color:var(--text3);white-space:nowrap;">日期區間</span>
-      <input type="date" id="vendor-date-from" onchange="renderVendorContent()" style="width:140px;">
-      <span style="font-size:13px;color:var(--text3);">—</span>
-      <input type="date" id="vendor-date-to" onchange="renderVendorContent()" style="width:140px;">
+    <div class="flex gap-2 items-center mt-3 mb-4 flex-wrap">
+      <input type="text" id="vendor-search" placeholder="搜尋廠商…" oninput="renderVendorTabs()" class="w-[150px]">
+      <div class="w-px h-5 bg-border mx-0.5"></div>
+      <span class="text-xs text-txt-3 whitespace-nowrap">日期區間</span>
+      <input type="date" id="vendor-date-from" onchange="renderVendorContent()" class="w-[140px]">
+      <span class="text-[13px] text-txt-3">—</span>
+      <input type="date" id="vendor-date-to" onchange="renderVendorContent()" class="w-[140px]">
       <button class="btn btn-sm btn-ghost" onclick="clearVendorFilters()">✕ 清除</button>
     </div>
-    <div style="overflow-x:auto;margin-bottom:1rem;">
-      <div id="vendor-tabs" style="display:flex;gap:0;border-bottom:1px solid var(--border);min-width:max-content;"></div>
+    <div class="overflow-x-auto mb-4">
+      <div id="vendor-tabs" class="flex gap-0 border-b border-border min-w-max"></div>
     </div>
-    <div id="vendor-summary-bar" style="margin-bottom:1rem;"></div>
+    <div id="vendor-summary-bar" class="mb-4"></div>
     <div id="vendor-content"></div>
-    <div id="vendor-total-card" style="margin-top:1.5rem;"></div>
+    <div id="vendor-total-card" class="mt-6"></div>
   </div>
 
   <!-- 歷史價格查詢 -->
   <div id="sec-price" class="section">
     <div class="card">
       <div class="section-title">查詢歷史採購價格</div>
-      <div style="display:flex;gap:8px;margin-bottom:1rem;">
-        <input type="text" id="price-search" placeholder="輸入商品名稱（如：北耆王、天麻、枸杞…）" style="flex:1;" oninput="renderPriceSearch()">
-        <select id="price-vendor" onchange="renderPriceSearch()" style="width:160px;">
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="price-search" placeholder="輸入商品名稱（如：北耆王、天麻、枸杞…）" class="flex-1" oninput="renderPriceSearch()">
+        <select id="price-vendor" onchange="renderPriceSearch()" class="w-[160px]">
           <option value="">所有廠商</option>
         </select>
       </div>
@@ -182,20 +207,20 @@ tailwind.config = {
         <div class="form-group"><label>物流編號 *</label><input type="text" id="cod-tracking" placeholder="例：123456789"></div>
         <div class="form-group"><label>收款金額 *</label><input type="number" id="cod-amount" placeholder="0" min="0"></div>
       </div>
-      <div class="form-group" style="margin-top:8px;">
+      <div class="form-group mt-2">
         <label>備註</label>
         <input type="text" id="cod-note" placeholder="選填">
       </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
+      <div class="flex justify-end mt-4">
         <button class="btn btn-primary" onclick="addCodRecord()">新增記錄</button>
       </div>
     </div>
 
-    <div class="card" style="margin-top:1rem;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div class="section-title" style="margin-bottom:0;">代收款記錄</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+    <div class="card mt-4">
+      <div class="flex justify-between items-center mb-4">
+        <div class="section-title mb-0">代收款記錄</div>
+        <div class="flex gap-2 items-center">
+          <label class="flex items-center gap-1.5 text-xs cursor-pointer">
             <input type="checkbox" id="cod-show-uncollected" onchange="renderCodList()">
             只顯示未到帳
           </label>
@@ -211,10 +236,10 @@ tailwind.config = {
 
 <!-- 自訂對話框（取代原生 alert/confirm/prompt）-->
 <div class="modal-bg" id="dialog-bg" style="display:none;" onclick="if(event.target===this)_dialogCancel()">
-  <div class="modal" style="width:380px;">
+  <div class="modal w-[380px]">
     <h3 id="dialog-title"></h3>
-    <div id="dialog-body" style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-line;"></div>
-    <div id="dialog-input-wrap" style="display:none;margin-top:.75rem;">
+    <div id="dialog-body" class="text-[13px] text-txt-2 leading-relaxed whitespace-pre-line"></div>
+    <div id="dialog-input-wrap" class="hidden mt-3">
       <input type="text" id="dialog-input">
     </div>
     <div class="modal-actions" id="dialog-actions"></div>
