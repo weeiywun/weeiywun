@@ -89,7 +89,7 @@ function renderVendorTotalCard() {
   }
   const d = map[currentVendor];
   document.getElementById('vendor-total-card').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);">
       <span style="font-size:13px;font-weight:600;color:var(--text);">${currentVendor}</span>
       <span style="font-size:13px;color:var(--text2);">累計 <b>${d.orders.length}</b> 筆</span>
       <span style="font-size:16px;font-weight:600;">$${d.total.toLocaleString()}</span>
@@ -127,7 +127,7 @@ function renderVendorContent() {
   const unpaidTotal       = names.reduce((s,v) => s + map[v].unpaid, 0);
 
   document.getElementById('vendor-summary-bar').innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;">
       <div style="font-size:12px;color:var(--text2);font-weight:500;letter-spacing:.01em;margin-bottom:.75rem;">
         ${rangeText}　共 ${names.length} 家廠商
       </div>
@@ -176,7 +176,7 @@ function renderVendorContent() {
         </table>
       </div>
     </div>` : `
-    <div style="padding:.85rem 1.25rem;margin-bottom:1rem;background:rgba(34,197,94,.06);border:1px solid var(--green);border-radius:10px;font-size:13px;color:var(--green);font-weight:500;">
+    <div style="padding:.85rem 1.25rem;margin-bottom:1rem;background:rgba(34,197,94,.06);border:1px solid var(--green);border-radius:14px;font-size:13px;color:var(--green);font-weight:500;">
       ✓ ${currentVendor} 無未付款訂單
     </div>`;
 
@@ -208,8 +208,7 @@ async function batchMarkVendorPaid(vendor) {
   if (!unpaidList.length) { toast('此廠商已無未付款訂單'); return; }
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
-  const confirmed = confirm(
-    '【標記廠商全部付清】\n\n' +
+  const confirmed = await showConfirm('標記廠商全部付清',
     '廠商：' + vendor + '\n' +
     '未付款筆數：' + unpaidList.length + ' 筆\n' +
     '未付款總額：$' + total.toLocaleString() + '\n\n' +
@@ -217,7 +216,7 @@ async function batchMarkVendorPaid(vendor) {
   );
   if (!confirmed) return;
 
-  const paidDate = prompt('請輸入付款日期：', today());
+  const paidDate = await showPrompt('付款日期', '請輸入付款日期', today());
   if (!paidDate || !paidDate.trim()) return;
 
   let done = 0, failed = 0;
@@ -253,7 +252,7 @@ async function batchMarkVendorPaid(vendor) {
   renderVendorTotalCard();
   renderVendorTabs();
   if (failed > 0) {
-    alert('完成：' + done + ' 筆成功，' + failed + ' 筆失敗');
+    showAlert('批次付款結果', '完成：' + done + ' 筆成功，' + failed + ' 筆失敗');
   } else {
     toast('✓ ' + vendor + ' 共 ' + done + ' 筆已標記付清');
   }

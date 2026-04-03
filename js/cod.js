@@ -53,7 +53,7 @@ async function addCodRecord() {
   const note      = document.getElementById('cod-note').value.trim();
 
   if (!sendDate || !recipient || !tracking || !amount) {
-    alert('請填寫寄件日期、收件人、物流編號與收款金額');
+    showAlert('欄位不完整', '請填寫寄件日期、收件人、物流編號與收款金額');
     return;
   }
 
@@ -86,18 +86,18 @@ async function addCodRecord() {
     await renderCodList();
     toast('✓ 代收款記錄已新增，預計入帳日：' + expectedDate);
   } catch (e) {
-    alert('儲存失敗：' + e.message);
+    showAlert('儲存失敗', e.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '新增記錄'; }
   }
 }
 
 async function confirmCodCollected(id) {
-  const date = prompt('請輸入入帳日期：', today());
+  const date = await showPrompt('確認到帳', '請輸入入帳日期', today());
   if (date === null) return;
-  if (!date.trim()) { alert('請填寫入帳日期'); return; }
+  if (!date.trim()) { showAlert('提示', '請填寫入帳日期'); return; }
 
-  const amtStr = prompt('請輸入實際到帳金額：', '');
+  const amtStr = await showPrompt('實際到帳金額', '請輸入實際到帳金額（留空表示與原金額相同）', '');
   if (amtStr === null) return;
 
   const patch = { collected: true, collected_date: date.trim() };
@@ -111,18 +111,18 @@ async function confirmCodCollected(id) {
     await renderCodList();
     toast('✓ 已確認到帳');
   } catch (e) {
-    alert('更新失敗：' + e.message);
+    showAlert('更新失敗', e.message);
   }
 }
 
 async function deleteCodRecord(id) {
-  if (!confirm('確定刪除這筆記錄？')) return;
+  if (!await showDangerConfirm('刪除記錄', '確定刪除這筆記錄？')) return;
   try {
     await _codFetch('cod_records?id=eq.' + id, { method: 'DELETE' });
     await renderCodList();
     toast('已刪除');
   } catch (e) {
-    alert('刪除失敗：' + e.message);
+    showAlert('刪除失敗', e.message);
   }
 }
 
@@ -214,7 +214,7 @@ async function renderCodList() {
     }).join('');
 
     container.innerHTML = statsHTML + `
-      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">${rows}</div>`;
+      <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;">${rows}</div>`;
 
   } catch (e) {
     console.error('載入代收款紀錄失敗:', e);
