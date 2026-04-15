@@ -1,0 +1,33 @@
+{
+  "name": "weeiywun-inventory-system",
+  "version": "4.7.0",
+  "description": "惟元門市 - 進貨帳務管理系統",
+  "private": true,
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "lint": "eslint js/*.js --fix",
+    "format": "prettier --write \"**/*.{js,html,css,md}\"",
+    "test": "echo \"警告：尚未實作測試\" && exit 0",
+    "validate": "npm run lint && npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weeiywun/weeiywun.git"
+  },
+  "keywords": [
+    "inventory",
+    "management",
+    "accounting",
+    "traditional-medicine"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
