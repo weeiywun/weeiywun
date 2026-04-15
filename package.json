@@ -7,7 +7,8 @@
     "dev": "python3 -m http.server 8080",
     "lint": "eslint js/*.js --fix",
     "format": "prettier --write \"**/*.{js,html,css,md}\"",
-    "test": "echo \"警告：尚未實作測試\" && exit 0",
+    "test": "node tests/security.test.js && node tests/validation.test.js",
+    "test:watch": "nodemon --exec npm test",
     "validate": "npm run lint && npm run test"
   },
   "repository": {

@@ -1,3 +1,18 @@
+/**
+ * Debounce 函式 - 延遲執行，避免頻繁觸發
+ */
+function debounce(func, wait = 300) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
 // ── 工具函式 ──────────────────────────────────────────
 function toast(msg) {
   const el = document.getElementById('toast');
