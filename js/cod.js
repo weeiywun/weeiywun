@@ -59,7 +59,7 @@ async function addCodRecord() {
 
   const expectedDate = calcExpectedDate(sendDate);
   const rec = {
-    id: Date.now().toString(),
+    id: window.securityUtils.generateId(), // 使用 UUID 避免 ID 碰撞
     send_date: sendDate,
     recipient,
     tracking,

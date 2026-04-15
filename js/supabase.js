@@ -1,4 +1,11 @@
 // ── Supabase 設定 ─────────────────────────────────────
+// ⚠️ 安全警告：
+// 1. ANON KEY 暴露在前端程式碼中
+// 2. 必須啟用 Row Level Security (RLS) 保護資料
+// 3. 請立即依照 docs/SUPABASE_RLS_SETUP.md 設置 RLS 策略
+// 4. 考慮使用環境變數管理敏感資訊 (參見 .env.example)
+//
+// TODO: 實作環境變數載入機制
 const SUPABASE_URL = 'https://lkryumerfbqfwfyxegve.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrcnl1bWVyZmJxZndmeXhlZ3ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQxMDgsImV4cCI6MjA4OTIwMDEwOH0.AA0aqoYqln4e-uoMoqQpk_BfqexA6ncHOLi9SDOne34';
 

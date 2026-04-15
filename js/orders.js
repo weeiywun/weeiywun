@@ -286,7 +286,7 @@ async function createRefund(id) {
   if (!await showConfirm('建立退換貨', `要為「${o.vendor}／${o.orderId||o.date}」建立退換貨記錄嗎？\n\n系統會複製此訂單並標記為退換貨，您可以在編輯模式修改退貨品項與數量。`)) return;
   const refund = {
     ...JSON.parse(JSON.stringify(o)),
-    id: Date.now().toString(),
+    id: window.securityUtils.generateId(), // 使用 UUID 避免 ID 碰撞
     type: 'refund',
     refundOf: id,
     status: 'paid',

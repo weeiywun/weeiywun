@@ -297,7 +297,7 @@ async function saveAllOrders() {
     const payNote  = document.getElementById('f-pay-note-' + fid)?.value.trim() || '';
 
     const newOrder = {
-      id: (Date.now() + savedCount).toString(),
+      id: window.securityUtils.generateId(), // 使用 UUID 避免 ID 碰撞
       date, orderId, vendor, items, total,
       status: isPaid ? 'paid' : 'pending',
       paidDate, payMethod, payNote,
