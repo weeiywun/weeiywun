@@ -270,11 +270,7 @@ async function saveAllOrders() {
     const note    = document.getElementById('f-note-' + fid)?.value.trim() || '';
     const orderNote = document.getElementById('f-order-note-' + fid)?.value.trim() || '';
 
-    if (!date || !vendor) {
-      errors.push(`訂單 #${fid}：請填寫日期與廠商`);
-      continue;
-    }
-
+    // 收集品項
     const items = [];
     document.getElementById('items-container-' + fid)?.querySelectorAll('.item-row').forEach(row => {
       const id = row.id.replace('item-','');
@@ -285,31 +281,37 @@ async function saveAllOrders() {
       if (name) items.push({name, price, qty, unit});
     });
 
-    if (!items.length) {
-      errors.push(`訂單 #${fid}（${vendor}）：請至少填一個品項`);
-      continue;
-    }
-
-    const total    = Math.round(items.reduce((s,i) => s+i.price*i.qty, 0));
     const isPaid   = document.getElementById('f-paid-' + fid)?.checked;
     const paidDate = isPaid ? (document.getElementById('f-paid-date-' + fid)?.value || date) : '';
     const payMethod = document.querySelector(`input[name="paymethod-${fid}"]:checked`)?.value || '';
     const payNote  = document.getElementById('f-pay-note-' + fid)?.value.trim() || '';
 
-    const newOrder = {
-      id: (Date.now() + savedCount).toString(),
-      date, orderId, vendor, items, total,
+    // 建立訂單物件
+    const rawOrder = {
+      id: window.securityUtils.generateId(),
+      date, orderId, vendor, items,
+      total: window.OrderValidation.calculateTotal(items), // 使用統一計算邏輯
       status: isPaid ? 'paid' : 'pending',
       paidDate, payMethod, payNote,
       note: orderNote || note
     };
 
+    // 清理與驗證資料
+    const sanitizedOrder = window.OrderValidation.sanitizeOrder(rawOrder);
+    const validationErrors = window.OrderValidation.validateOrder(sanitizedOrder);
+    
+    if (validationErrors.length > 0) {
+      errors.push(`訂單 #${fid}（${vendor}）：${validationErrors.join('、')}`);
+      continue;
+    }
+
     try {
-      orders.push(newOrder);
-      await persist(newOrder, 'insert');
+      orders.push(sanitizedOrder);
+      await persist(sanitizedOrder, 'insert');
       savedCount++;
     } catch(e) {
-      errors.push(`訂單 #${fid}（${vendor}）儲存失敗`);
+      console.error('儲存失敗:', e);
+      errors.push(`訂單 #${fid}（${vendor}）儲存失敗：${e.message}`);
     }
   }
 

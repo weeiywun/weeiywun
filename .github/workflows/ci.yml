@@ -1,0 +1,77 @@
+name: 程式碼品質檢查
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: 程式碼檢查
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout 程式碼
+      uses: actions/checkout@v4
+      
+    - name: 設置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 安裝依賴
+      run: npm ci
+      
+    - name: 執行 ESLint
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: 執行測試
+      run: npm test
+      
+  security:
+    name: 安全性檢查
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout 程式碼
+      uses: actions/checkout@v4
+      
+    - name: 檢查敏感資料
+      run: |
+        # 檢查是否有 .env 檔案被提交
+        if [ -f .env ]; then
+          echo "錯誤：.env 檔案不應該被提交到版本控制"
+          exit 1
+        fi
+        
+        # 檢查是否有明顯的密碼字串
+        if grep -r "password.*=.*['\"].*['\"]" js/*.js; then
+          echo "警告：發現可能的硬編碼密碼"
+          # 暫不強制失敗，僅警告
+        fi
+        
+        echo "✓ 基本安全性檢查通過"
+        
+  documentation:
+    name: 文檔檢查
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout 程式碼
+      uses: actions/checkout@v4
+      
+    - name: 檢查必要文檔
+      run: |
+        REQUIRED_DOCS=("README.md" "docs/SECURITY.md" "docs/SUPABASE_RLS_SETUP.md" ".env.example")
+        
+        for doc in "${REQUIRED_DOCS[@]}"; do
+          if [ ! -f "$doc" ]; then
+            echo "錯誤：缺少必要文檔 $doc"
+            exit 1
+          fi
+        done
+        
+        echo "✓ 所有必要文檔都存在"

@@ -254,6 +254,8 @@ function recalcEdit() {
 async function saveEdit(id) {
   const o = orders.find(x => x.id === id);
   if (!o) return;
+  
+  // 收集品項
   const items = [];
   document.querySelectorAll('#edit-items-container .edit-item-row').forEach(row => {
     const idx = row.id.replace('edit-item-','');
@@ -263,17 +265,30 @@ async function saveEdit(id) {
     const unit = document.getElementById('eunit-'+idx)?.value||'斤';
     if (name) items.push({name, price, qty, unit});
   });
-  if (!items.length) { showAlert('提示', '請至少保留一個品項'); return; }
+  
+  // 更新訂單資料
   o.date = document.getElementById('e-date').value;
   o.orderId = document.getElementById('e-orderid').value.trim();
   o.vendor = document.getElementById('e-vendor').value.trim();
   o.items = items;
-  o.total = Math.round(items.reduce((s,i) => s+i.price*i.qty, 0));
+  o.total = window.OrderValidation.calculateTotal(items); // 使用統一計算邏輯
   o.status = document.getElementById('e-status').value;
   o.paidDate = document.getElementById('e-paiddate').value;
   o.payMethod = document.getElementById('e-paymethod').value;
   o.payNote = document.getElementById('e-paynote').value;
   o.note = document.getElementById('e-note').value;
+  
+  // 清理與驗證
+  const sanitized = window.OrderValidation.sanitizeOrder(o);
+  const validationErrors = window.OrderValidation.validateOrder(sanitized);
+  
+  if (validationErrors.length > 0) {
+    showAlert('驗證失敗', validationErrors.join('\n'));
+    return;
+  }
+  
+  // 更新本地與資料庫
+  Object.assign(o, sanitized);
   await persist(o, 'update');
   renderOrders();
   toast('✓ 訂單已更新');
@@ -286,7 +301,7 @@ async function createRefund(id) {
   if (!await showConfirm('建立退換貨', `要為「${o.vendor}／${o.orderId||o.date}」建立退換貨記錄嗎？\n\n系統會複製此訂單並標記為退換貨，您可以在編輯模式修改退貨品項與數量。`)) return;
   const refund = {
     ...JSON.parse(JSON.stringify(o)),
-    id: Date.now().toString(),
+    id: window.securityUtils.generateId(), // 使用 UUID 避免 ID 碰撞
     type: 'refund',
     refundOf: id,
     status: 'paid',

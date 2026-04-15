@@ -267,6 +267,11 @@ tailwind.config = {
 
 <datalist id="vendor-list"></datalist>
 
+<!-- 安全與驗證模組 (必須最先載入) -->
+<script src="js/security.js"></script>
+<script src="js/validation.js"></script>
+
+<!-- 核心功能模組 -->
 <script src="js/dialog.js"></script>
 <script src="js/data.js"></script>
 <script src="js/supabase.js"></script>

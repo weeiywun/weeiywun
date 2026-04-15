@@ -1,5 +1,13 @@
 // ── 認證邏輯 ──────────────────────────────────────────
+// ⚠️ 安全警告：
+// 1. 此檔案包含硬編碼密碼，僅用於原型或開發環境
+// 2. 生產環境必須實作後端 API 驗證
+// 3. 請參閱 docs/SECURITY.md 了解安全改進建議
+// 4. 務必啟用 Supabase RLS (參見 docs/SUPABASE_RLS_SETUP.md)
+//
+// TODO: 遷移到 Supabase Auth 或自訂後端 API
 (function() {
+  // ⚠️ 不安全：密碼硬編碼在前端
   const PWD = '53251954';
   const KEY = 'ww_auth';
   const EMPLOYEE_PWD = '820626';
