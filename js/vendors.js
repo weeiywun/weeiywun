@@ -39,25 +39,11 @@ function renderVendors() { renderVendorTabs(); }
 function renderVendorTabs() {
   const search = document.getElementById('vendor-search').value.toLowerCase();
   const map = getVendorMap();
-  const allCatVendors = new Set(Object.values(VENDOR_CATEGORIES).flat());
 
   let names;
-  if (currentCategory === '其他') {
-    names = Object.keys(map)
-      .filter(v => !allCatVendors.has(v) && (!search || v.toLowerCase().includes(search)))
-      .sort((a,b) => a.localeCompare(b, 'zh-TW'));
-  } else {
-    const catVendors = VENDOR_CATEGORIES[currentCategory] || [];
-    names = catVendors.filter(v =>
-      map[v] && (!search || v.toLowerCase().includes(search))
-    );
-    if (search) {
-      Object.keys(map).forEach(v => {
-        if (!allCatVendors.has(v) && v.toLowerCase().includes(search) && !names.includes(v))
-          names.push(v);
-      });
-    }
-  }
+  names = Object.keys(map)
+    .filter(v => getVendorCategory(v) === currentCategory && (!search || v.toLowerCase().includes(search)));
+  names = currentCategory === '其他' ? names.sort((a,b) => a.localeCompare(b, 'zh-TW')) : sortVendors(names);
 
   if (!names.length) {
     document.getElementById('vendor-tabs').innerHTML = '';
@@ -88,12 +74,45 @@ function renderVendorTotalCard() {
     return;
   }
   const d = map[currentVendor];
+  const options = getVendorCategoryOptions().map(cat =>
+    `<option value="${cat}" ${cat === getVendorCategory(currentVendor) ? 'selected' : ''}>${cat}</option>`
+  ).join('');
   document.getElementById('vendor-total-card').innerHTML = `
-    <div class="card flex justify-between items-center py-3.5 px-5">
+    <div class="card flex justify-between items-center py-3.5 px-5 gap-3 flex-wrap">
       <span class="text-[13px] font-semibold text-txt">${currentVendor}</span>
       <span class="text-[13px] text-txt-2">累計 <b>${d.orders.length}</b> 筆</span>
       <span class="text-base font-semibold">$${d.total.toLocaleString()}</span>
+      <label class="flex items-center gap-2 text-[12px] text-txt-2">
+        分類
+        <select onchange="changeCurrentVendorCategory(this.value)" class="w-[120px]">
+          ${options}
+        </select>
+      </label>
     </div>`;
+}
+
+async function changeCurrentVendorCategory(category) {
+  if (!currentVendor || category === getVendorCategory(currentVendor)) return;
+  const oldCategory = getVendorCategory(currentVendor);
+  const confirmed = await showConfirm(
+    '移動廠商分類',
+    `廠商：${currentVendor}\n\n從「${oldCategory}」移到「${category}」。\n這只會調整廠商顯示分類，不會修改任何訂單金額、付款狀態或品項。`
+  );
+  if (!confirmed) {
+    renderVendorTotalCard();
+    return;
+  }
+  const synced = await setVendorCategory(currentVendor, category);
+  currentCategory = category;
+  document.querySelectorAll('.vendor-cat-tab').forEach(el =>
+    el.classList.toggle('active', el.dataset.cat === category)
+  );
+  renderVendorTabs();
+  if (synced) {
+    toast('✓ 已同步廠商分類');
+  } else {
+    showAlert('分類已暫存', '廠商分類已先保存在此裝置。若要讓其他裝置同步看到，請先在 Supabase 建立 vendor_categories 資料表。');
+  }
 }
 
 function selectVendorTab(v) {

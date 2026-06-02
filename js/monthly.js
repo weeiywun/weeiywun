@@ -133,13 +133,9 @@ async function printMonthly() {
   );
 
   const catGroups = {};
-  ['中藥材','包裝材','其他','物流','大樓修繕'].forEach(cat => { catGroups[cat] = []; });
+  getVendorCategoryOptions().forEach(cat => { catGroups[cat] = []; });
   unpaidVendors.forEach(v => {
-    let cat = '其他';
-    for (const [c, vlist] of Object.entries(VENDOR_CATEGORIES)) {
-      if (vlist.includes(v)) { cat = c; break; }
-    }
-    catGroups[cat].push(v);
+    catGroups[getVendorCategory(v)].push(v);
   });
 
   const unpaidOrderCount = list.filter(o=>o.status!=='paid').length;

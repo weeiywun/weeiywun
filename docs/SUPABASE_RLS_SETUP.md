@@ -101,6 +101,40 @@ TO authenticated
 USING (true);
 ```
 
+### 4. Vendor Categories 表格
+
+用於同步不同裝置的廠商分類設定。建立表格的完整 SQL 請參考 `docs/SUPABASE_VENDOR_CATEGORIES.md`。
+
+```sql
+-- 啟用 RLS
+ALTER TABLE vendor_categories ENABLE ROW LEVEL SECURITY;
+
+-- 策略 1: 所有已認證用戶可讀取
+CREATE POLICY "Allow authenticated read vendor categories"
+ON vendor_categories FOR SELECT
+TO authenticated
+USING (true);
+
+-- 策略 2: 所有已認證用戶可新增
+CREATE POLICY "Allow authenticated insert vendor categories"
+ON vendor_categories FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+-- 策略 3: 所有已認證用戶可更新
+CREATE POLICY "Allow authenticated update vendor categories"
+ON vendor_categories FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+-- 策略 4: 所有已認證用戶可刪除
+CREATE POLICY "Allow authenticated delete vendor categories"
+ON vendor_categories FOR DELETE
+TO authenticated
+USING (true);
+```
+
 ## 進階安全建議
 
 ### 選項 A: 使用 Supabase Auth（推薦）

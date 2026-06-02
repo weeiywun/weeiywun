@@ -38,6 +38,107 @@ const VENDOR_CATEGORIES = {
   '物流':   ['新竹貨運','宅配通'],
   '大樓修繕': ['新光保全','興承','崇友'],
 };
+const VENDOR_CATEGORY_NAMES = ['中藥材','包裝材','其他','物流','大樓修繕'];
+const VENDOR_CATEGORY_STORAGE_KEY = 'weiyuan_vendor_categories_v1';
+const VENDOR_CATEGORY_TABLE = 'vendor_categories';
+
+// 可在這裡放正式固定的分類覆寫；使用者在畫面調整的分類會存在瀏覽器 localStorage。
+const VENDOR_CATEGORY_OVERRIDES = {};
+let vendorCategoryOverrides = loadVendorCategoryOverrides();
+let vendorCategorySyncReady = false;
+
+function loadVendorCategoryOverrides() {
+  const merged = { ...VENDOR_CATEGORY_OVERRIDES };
+  try {
+    const raw = localStorage.getItem(VENDOR_CATEGORY_STORAGE_KEY);
+    if (!raw) return merged;
+    const stored = JSON.parse(raw);
+    Object.entries(stored || {}).forEach(([vendor, category]) => {
+      if (vendor && VENDOR_CATEGORY_NAMES.includes(category)) merged[vendor] = category;
+    });
+  } catch (e) {
+    console.warn('讀取廠商分類設定失敗', e);
+  }
+  return merged;
+}
+
+function saveVendorCategoryOverrides() {
+  try {
+    localStorage.setItem(VENDOR_CATEGORY_STORAGE_KEY, JSON.stringify(vendorCategoryOverrides));
+  } catch (e) {
+    console.warn('儲存廠商分類設定失敗', e);
+  }
+}
+
+function getBaseVendorCategory(vendor) {
+  for (const [category, vendors] of Object.entries(VENDOR_CATEGORIES)) {
+    if (vendors.includes(vendor)) return category;
+  }
+  return '其他';
+}
+
+function getVendorCategory(vendor) {
+  return vendorCategoryOverrides[vendor] || getBaseVendorCategory(vendor);
+}
+
+async function loadVendorCategoriesFromDB() {
+  if (!supabaseReady) return;
+  try {
+    const data = await sbFetch(`${VENDOR_CATEGORY_TABLE}?select=vendor,category`);
+    const next = { ...VENDOR_CATEGORY_OVERRIDES };
+    (data || []).forEach(row => {
+      if (row.vendor && VENDOR_CATEGORY_NAMES.includes(row.category)) {
+        next[row.vendor] = row.category;
+      }
+    });
+    vendorCategoryOverrides = next;
+    saveVendorCategoryOverrides();
+    vendorCategorySyncReady = true;
+  } catch (e) {
+    vendorCategorySyncReady = false;
+    console.warn('廠商分類表尚未可用，暫用本機分類設定', e);
+  }
+}
+
+async function saveVendorCategoryToDB(vendor, category) {
+  if (!supabaseReady || !vendorCategorySyncReady) return false;
+  const baseCategory = getBaseVendorCategory(vendor);
+  if (category === baseCategory) {
+    await sbFetch(`${VENDOR_CATEGORY_TABLE}?vendor=eq.${encodeURIComponent(vendor)}`, {
+      method: 'DELETE',
+      prefer: 'return=minimal'
+    });
+    return true;
+  }
+  await sbFetch(`${VENDOR_CATEGORY_TABLE}?on_conflict=vendor`, {
+    method: 'POST',
+    prefer: 'resolution=merge-duplicates,return=minimal',
+    body: JSON.stringify({
+      vendor,
+      category,
+      updated_at: new Date().toISOString()
+    })
+  });
+  return true;
+}
+
+async function setVendorCategory(vendor, category) {
+  if (!vendor || !VENDOR_CATEGORY_NAMES.includes(category)) return false;
+  const baseCategory = getBaseVendorCategory(vendor);
+  if (category === baseCategory) delete vendorCategoryOverrides[vendor];
+  else vendorCategoryOverrides[vendor] = category;
+  saveVendorCategoryOverrides();
+  try {
+    return await saveVendorCategoryToDB(vendor, category);
+  } catch (e) {
+    console.warn('同步廠商分類失敗，已暫存在本機', e);
+    return false;
+  }
+}
+
+function getVendorCategoryOptions() {
+  return VENDOR_CATEGORY_NAMES;
+}
 
 // ── Supabase fetch 封裝 ──────────────────────────────
 async function sbFetch(path, options = {}) {
@@ -82,6 +183,7 @@ async function loadOrders() {
       refundOf: r.refund_of || ''
     }));
     supabaseReady = true;
+    await loadVendorCategoriesFromDB();
     setSyncStatus('synced', `已同步 ${orders.length} 筆`);
     await importHistory();
   } catch(e) {

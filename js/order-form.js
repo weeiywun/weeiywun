@@ -8,19 +8,26 @@ function updateVendorList() {
 function buildVendorSelect(selectId) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
-  const known = VENDOR_CATEGORIES;
-  const allCatVendors = new Set(Object.values(known).flat());
-  const extraVendors = [...new Set(orders.map(o=>o.vendor))].filter(v=>!allCatVendors.has(v)).sort();
+  const vendorsByCategory = {};
+  getVendorCategoryOptions().forEach(cat => { vendorsByCategory[cat] = []; });
+
+  Object.values(VENDOR_CATEGORIES).flat().forEach(vendor => {
+    const category = getVendorCategory(vendor);
+    if (!vendorsByCategory[category].includes(vendor)) vendorsByCategory[category].push(vendor);
+  });
+  [...new Set(orders.map(o=>o.vendor))].forEach(vendor => {
+    const category = getVendorCategory(vendor);
+    if (!vendorsByCategory[category].includes(vendor)) vendorsByCategory[category].push(vendor);
+  });
 
   let html = '<option value="">選擇廠商…</option>';
-  for (const [cat, vendors] of Object.entries(known)) {
+  for (const cat of getVendorCategoryOptions()) {
+    const vendors = cat === '其他'
+      ? vendorsByCategory[cat].sort((a,b) => a.localeCompare(b, 'zh-TW'))
+      : sortVendors(vendorsByCategory[cat]);
+    if (!vendors.length) continue;
     html += `<optgroup label="── ${cat} ──">`;
     vendors.forEach(v => { html += `<option value="${v}">${v}</option>`; });
-    html += '</optgroup>';
-  }
-  if (extraVendors.length) {
-    html += '<optgroup label="── 其他 ──">';
-    extraVendors.forEach(v => { html += `<option value="${v}">${v}</option>`; });
     html += '</optgroup>';
   }
   html += '<option value="__new__">＋ 新廠商（請手動填寫）</option>';
@@ -54,6 +61,11 @@ function createOrderFormHTML(fid) {
             <option value="">選擇廠商…</option>
           </select>
           <input type="text" id="f-vendor-txt-${fid}" placeholder="或輸入新廠商" class="flex-1 hidden">
+        </div>
+        <div id="f-vendor-cat-wrap-${fid}" class="hidden mt-1.5">
+          <select id="f-vendor-cat-${fid}" class="w-full">
+            ${getVendorCategoryOptions().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+          </select>
         </div>
       </div>
     </div>
@@ -144,11 +156,14 @@ function resetAllForms() {
 function onVendorSelChange(fid) {
   const sel = document.getElementById('f-vendor-sel-' + fid);
   const txt = document.getElementById('f-vendor-txt-' + fid);
+  const catWrap = document.getElementById('f-vendor-cat-wrap-' + fid);
   if (sel.value === '__new__') {
     txt.classList.remove('hidden');
+    catWrap.classList.remove('hidden');
     txt.focus();
   } else {
     txt.classList.add('hidden');
+    catWrap.classList.add('hidden');
   }
 }
 
@@ -158,6 +173,12 @@ function getVendorForForm(fid) {
     return document.getElementById('f-vendor-txt-' + fid).value.trim();
   }
   return sel.value;
+}
+
+function getVendorCategoryForForm(fid) {
+  const sel = document.getElementById('f-vendor-sel-' + fid);
+  if (sel.value !== '__new__') return '';
+  return document.getElementById('f-vendor-cat-' + fid)?.value || '其他';
 }
 
 function togglePaidFieldsFor(fid) {
@@ -261,12 +282,14 @@ async function saveAllOrders() {
 
   let savedCount = 0;
   let errors = [];
+  let categorySyncWarnings = [];
 
   for (const form of forms) {
     const fid = form.id.replace('oform-','');
     const date    = document.getElementById('f-date-' + fid)?.value;
     const orderId = document.getElementById('f-orderid-' + fid)?.value.trim() || '';
     const vendor  = getVendorForForm(fid);
+    const vendorCategory = getVendorCategoryForForm(fid);
     const note    = document.getElementById('f-note-' + fid)?.value.trim() || '';
     const orderNote = document.getElementById('f-order-note-' + fid)?.value.trim() || '';
 
@@ -308,6 +331,10 @@ async function saveAllOrders() {
     try {
       orders.push(sanitizedOrder);
       await persist(sanitizedOrder, 'insert');
+      if (vendorCategory) {
+        const synced = await setVendorCategory(sanitizedOrder.vendor, vendorCategory);
+        if (!synced) categorySyncWarnings.push(sanitizedOrder.vendor);
+      }
       savedCount++;
     } catch(e) {
       console.error('儲存失敗:', e);
@@ -319,6 +346,12 @@ async function saveAllOrders() {
 
   if (errors.length) {
     showAlert('部分儲存失敗', errors.join('\n'));
+  }
+  if (categorySyncWarnings.length) {
+    showAlert(
+      '分類尚未跨裝置同步',
+      `訂單已儲存，但以下新廠商分類目前只暫存在此裝置：\n${categorySyncWarnings.join('、')}\n\n請先在 Supabase 建立 vendor_categories 資料表。`
+    );
   }
   if (savedCount > 0) {
     toast(`✓ 已儲存 ${savedCount} 張訂單`);
