@@ -36,6 +36,14 @@ function getVendorMap() {
 
 function renderVendors() { renderVendorTabs(); }
 
+function sortVendorTabsByPayment(names, map) {
+  const hasUnpaid = v => map[v] && map[v].unpaid > 0;
+  return [
+    ...names.filter(hasUnpaid),
+    ...names.filter(v => !hasUnpaid(v))
+  ];
+}
+
 function renderVendorTabs() {
   const search = document.getElementById('vendor-search').value.toLowerCase();
   const map = getVendorMap();
@@ -44,6 +52,7 @@ function renderVendorTabs() {
   names = Object.keys(map)
     .filter(v => getVendorCategory(v) === currentCategory && (!search || v.toLowerCase().includes(search)));
   names = currentCategory === '其他' ? names.sort((a,b) => a.localeCompare(b, 'zh-TW')) : sortVendors(names);
+  names = sortVendorTabsByPayment(names, map);
 
   if (!names.length) {
     document.getElementById('vendor-tabs').innerHTML = '';
