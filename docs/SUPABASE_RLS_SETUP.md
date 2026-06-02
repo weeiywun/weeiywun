@@ -105,33 +105,39 @@ USING (true);
 
 用於同步不同裝置的廠商分類設定。建立表格的完整 SQL 請參考 `docs/SUPABASE_VENDOR_CATEGORIES.md`。
 
+目前前端尚未使用 Supabase Auth，請求會以 `anon` 角色執行，因此這張表需要允許 `anon` 讀寫；否則前端分類會只暫存在單一裝置，重新整理後回到預設分類。
+
 ```sql
 -- 啟用 RLS
 ALTER TABLE vendor_categories ENABLE ROW LEVEL SECURITY;
 
--- 策略 1: 所有已認證用戶可讀取
-CREATE POLICY "Allow authenticated read vendor categories"
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON TABLE public.vendor_categories
+TO anon, authenticated;
+
+-- 策略 1: 前端可讀取
+CREATE POLICY "Allow anon read vendor categories"
 ON vendor_categories FOR SELECT
-TO authenticated
+TO anon, authenticated
 USING (true);
 
--- 策略 2: 所有已認證用戶可新增
-CREATE POLICY "Allow authenticated insert vendor categories"
+-- 策略 2: 前端可新增
+CREATE POLICY "Allow anon insert vendor categories"
 ON vendor_categories FOR INSERT
-TO authenticated
+TO anon, authenticated
 WITH CHECK (true);
 
--- 策略 3: 所有已認證用戶可更新
-CREATE POLICY "Allow authenticated update vendor categories"
+-- 策略 3: 前端可更新
+CREATE POLICY "Allow anon update vendor categories"
 ON vendor_categories FOR UPDATE
-TO authenticated
+TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
--- 策略 4: 所有已認證用戶可刪除
-CREATE POLICY "Allow authenticated delete vendor categories"
+-- 策略 4: 前端可刪除
+CREATE POLICY "Allow anon delete vendor categories"
 ON vendor_categories FOR DELETE
-TO authenticated
+TO anon, authenticated
 USING (true);
 ```
 

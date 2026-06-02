@@ -13,25 +13,58 @@ CREATE TABLE IF NOT EXISTS vendor_categories (
 
 ALTER TABLE vendor_categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow authenticated read vendor categories"
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON TABLE public.vendor_categories
+TO anon, authenticated;
+
+CREATE POLICY "Allow anon read vendor categories"
 ON vendor_categories FOR SELECT
-TO authenticated
+TO anon, authenticated
 USING (true);
 
-CREATE POLICY "Allow authenticated insert vendor categories"
+CREATE POLICY "Allow anon insert vendor categories"
 ON vendor_categories FOR INSERT
-TO authenticated
+TO anon, authenticated
 WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated update vendor categories"
+CREATE POLICY "Allow anon update vendor categories"
 ON vendor_categories FOR UPDATE
-TO authenticated
+TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated delete vendor categories"
+CREATE POLICY "Allow anon delete vendor categories"
 ON vendor_categories FOR DELETE
-TO authenticated
+TO anon, authenticated
+USING (true);
+```
+
+若你已經先建立了只允許 `authenticated` 的 policies，請再補跑這段 SQL：
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON TABLE public.vendor_categories
+TO anon, authenticated;
+
+CREATE POLICY "Allow anon read vendor categories"
+ON vendor_categories FOR SELECT
+TO anon
+USING (true);
+
+CREATE POLICY "Allow anon insert vendor categories"
+ON vendor_categories FOR INSERT
+TO anon
+WITH CHECK (true);
+
+CREATE POLICY "Allow anon update vendor categories"
+ON vendor_categories FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete vendor categories"
+ON vendor_categories FOR DELETE
+TO anon
 USING (true);
 ```
 
