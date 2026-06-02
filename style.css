@@ -228,6 +228,7 @@ tr:hover td{background:var(--surface2);}
 }
 
 @media print{
+  @page{size:A4;margin:12mm;}
   .header,.nav,.filter-row,.btn,.no-print{display:none!important;}
   .section{display:block!important;}
   #sec-orders,#sec-add,#sec-vendors,#sec-price,#sec-cod{display:none!important;}
@@ -236,7 +237,12 @@ tr:hover td{background:var(--surface2);}
   .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;margin-bottom:.5rem;}
   .main{padding:0 1rem;}
   .print-title{display:block!important;font-size:18px;font-weight:600;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:2px solid #000;}
-  #monthly-summary{margin-bottom:.5rem;}
+  #monthly-summary{display:none!important;}
   #print-summary-page{display:block!important;}
+  #print-summary-page .print-unpaid-summary{break-inside:avoid;page-break-inside:avoid;}
+  #print-summary-page .print-unpaid-summary>div:first-child{margin-bottom:4px!important;}
+  #print-summary-page .print-unpaid-summary>div:nth-child(2){margin-bottom:8px!important;padding:8px 10px!important;}
+  #print-summary-page table{break-inside:avoid;page-break-inside:avoid;}
+  #print-summary-page th,#print-summary-page td{break-inside:avoid;}
   #print-summary-page + *{page-break-before:always;}
 }

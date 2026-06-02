@@ -141,19 +141,41 @@ async function printMonthly() {
   const unpaidOrderCount = list.filter(o=>o.status!=='paid').length;
   const vendorUnpaidCount = unpaidVendors.length;
 
-  const tableStyle = `width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;`;
+  const summaryRows = [];
+  for (const [cat, vendors] of Object.entries(catGroups)) {
+    if (cat === '其他' && vendors.length === 0) continue;
+    summaryRows.push({ type: 'category', category: cat });
+    if (vendors.length === 0) {
+      summaryRows.push({ type: 'empty' });
+    } else {
+      vendors.forEach(v => {
+        const vd = vendorMap[v];
+        const unpaidOrders = vd.orders.filter(o=>o.status!=='paid');
+        summaryRows.push({
+          type: 'vendor',
+          vendor: v,
+          count: unpaidOrders.length,
+          unpaid: vd.unpaid
+        });
+      });
+    }
+  }
+  const rowHeight = Math.max(14, Math.min(28, Math.floor(560 / Math.max(summaryRows.length, 1))));
+  const tableFontSize = summaryRows.length > 34 ? 10.5 : 12;
+  const tableStyle = `width:100%;border-collapse:collapse;font-size:${tableFontSize}px;table-layout:fixed;`;
   const colDefs = `<colgroup>
+    <col style="width:16%;">
+    <col style="width:14%;">
     <col style="width:18%;">
-    <col style="width:18%;">
-    <col style="width:32%;">
+    <col style="width:20%;">
     <col style="width:16%;">
     <col style="width:16%;">
   </colgroup>`;
-  const thStyle = `padding:6px 8px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;`;
-  const tdStyle = `padding:5px 8px;border:1px solid #ddd;`;
+  const thStyle = `padding:5px 7px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;`;
+  const tdStyle = `padding:3px 7px;border:1px solid #ddd;height:${rowHeight}px;line-height:1.25;`;
 
   let summaryHTML = `
-    <div class="mb-4">
+    <div class="print-unpaid-summary">
       <div class="text-xs font-semibold text-txt-2 mb-2 tracking-wide">未付款快速總覽</div>
       <div class="flex gap-8 mb-4 py-3 px-4 bg-surface-2 border border-border rounded-md">
         <div><div class="text-[11px] text-txt-3">未付款廠商</div><div class="text-[22px] font-bold">${vendorUnpaidCount} 家</div></div>
@@ -164,41 +186,38 @@ async function printMonthly() {
   if (unpaidVendors.length === 0) {
     summaryHTML += `<div class="p-6 text-center text-ok font-semibold text-[15px] border border-ok/30 rounded-md bg-ok-bg">✓ 本月所有廠商均已付清</div>`;
   } else {
-    for (const [cat, vendors] of Object.entries(catGroups)) {
-      if (cat === '其他' && vendors.length === 0) continue;
-      summaryHTML += `
-        <div class="mb-3">
-          <div class="text-xs font-semibold text-txt-2 tracking-tight mb-1 pb-0.5 border-b border-border">${cat}</div>
-          <table style="${tableStyle}">
-            ${colDefs}
-            <thead>
-              <tr>
-                <th style="text-align:left;${thStyle}">廠商</th>
-                <th style="text-align:center;${thStyle}">未付款訂單數</th>
-                <th style="text-align:right;${thStyle}">未付款總額</th>
-                <th style="text-align:center;${thStyle}">現金／匯款</th>
-                <th style="text-align:center;${thStyle}">支票</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${vendors.length === 0
-                ? `<tr><td colspan="5" style="text-align:center;${tdStyle}" class="text-txt-3">— 本月無未付款 —</td></tr>`
-                : vendors.map(v => {
-                    const vd = vendorMap[v];
-                    const unpaidOrders = vd.orders.filter(o=>o.status!=='paid');
-                    return `<tr>
-                      <td style="${tdStyle}" class="font-medium">${v}</td>
-                      <td style="text-align:center;${tdStyle}">${unpaidOrders.length} 筆</td>
-                      <td style="text-align:right;${tdStyle}" class="font-semibold">$${vd.unpaid.toLocaleString()}</td>
-                      <td style="${tdStyle}"></td>
-                      <td style="${tdStyle}"></td>
-                    </tr>`;
-                  }).join('')
-              }
-            </tbody>
-          </table>
-        </div>`;
-    }
+    summaryHTML += `
+      <table style="${tableStyle}" class="print-unpaid-table">
+        ${colDefs}
+        <thead>
+          <tr>
+            <th style="text-align:left;${thStyle}">廠商</th>
+            <th style="text-align:center;${thStyle}">未付款訂單數</th>
+            <th style="text-align:right;${thStyle}">未付款總額</th>
+            <th style="text-align:center;${thStyle}">發票</th>
+            <th style="text-align:center;${thStyle}">現金／匯款</th>
+            <th style="text-align:center;${thStyle}">支票</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${summaryRows.map(row => {
+            if (row.type === 'category') {
+              return `<tr><td colspan="6" style="${tdStyle};height:18px;background:#f7f7f7;font-weight:600;">${row.category}</td></tr>`;
+            }
+            if (row.type === 'empty') {
+              return `<tr><td colspan="6" style="text-align:center;${tdStyle}" class="text-txt-3">— 本月無未付款 —</td></tr>`;
+            }
+            return `<tr>
+              <td style="${tdStyle}" class="font-medium">${row.vendor}</td>
+              <td style="text-align:center;${tdStyle}">${row.count} 筆</td>
+              <td style="text-align:right;${tdStyle}" class="font-semibold">$${row.unpaid.toLocaleString()}</td>
+              <td style="text-align:center;${tdStyle}">☐ 附發票　☐ 無發票</td>
+              <td style="${tdStyle}"></td>
+              <td style="${tdStyle}"></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
   }
 
   summaryHTML += `</div>`;
