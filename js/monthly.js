@@ -39,10 +39,15 @@ function renderMonthly() {
   const vendorBlocks = vendorNames.map((v, idx) => {
     const vd = vendorMap[v];
     const isAllPaid = vd.unpaid === 0;
+    const safeVendorJs = v.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeVendorAttr = escapeMonthlyAttr(v);
     const orderRows = vd.orders
       .sort((a,b) => a.date.localeCompare(b.date))
       .map(o => `
         <tr class="order-row cursor-pointer" onclick="showDetail('${o.id}')">
+          <td class="no-print" onclick="event.stopPropagation();">${o.status==='pending'
+            ? `<input type="checkbox" class="monthly-pay-check" data-vendor="${safeVendorAttr}" value="${o.id}" onchange="updateMonthlySelection('${safeVendorJs}')">`
+            : ''}</td>
           <td>${o.date}</td>
           <td class="mono">${o.orderId||'—'}</td>
           <td class="text-xs text-txt-2">${o.items.map(i => {
@@ -66,14 +71,20 @@ function renderMonthly() {
               <span class="text-xs text-txt-3">${vd.orders.length} 筆訂單</span>
               ${isAllPaid ? '<span class="badge badge-paid">全數付清</span>' : `<span class="badge badge-pending">待付 $${vd.unpaid.toLocaleString()}</span>`}
             </div>
-            <div class="text-right">
-              <div class="text-[11px] text-txt-3">本月採購</div>
-              <div class="text-lg font-semibold">$${vd.total.toLocaleString()}</div>
+            <div class="flex items-center gap-3">
+              ${!isAllPaid ? `<button class="btn btn-sm btn-success no-print" id="monthly-pay-btn-${makeMonthlyVendorKey(v)}" onclick="markSelectedVendorOrdersPaid('${safeVendorJs}')" disabled>標記勾選付款</button>` : ''}
+              <div class="text-right">
+                <div class="text-[11px] text-txt-3">本月採購</div>
+                <div class="text-lg font-semibold">$${vd.total.toLocaleString()}</div>
+              </div>
             </div>
           </div>
           <div class="overflow-x-auto">
             <table>
               <thead><tr>
+                <th class="no-print">
+                  ${!isAllPaid ? `<input type="checkbox" title="全選此廠商未付款訂單" onchange="toggleMonthlyVendorSelection('${safeVendorJs}', this.checked)">` : ''}
+                </th>
                 <th>日期</th><th>訂單編號</th><th>商品</th><th>金額</th><th>狀態</th><th>付款日期</th><th class="no-print">操作</th>
               </tr></thead>
               <tbody>${orderRows}</tbody>
@@ -90,6 +101,81 @@ function renderMonthly() {
     </div>`;
 
   document.getElementById('monthly-table').innerHTML = vendorBlocks + totalRow;
+}
+
+function escapeMonthlyAttr(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function makeMonthlyVendorKey(vendor) {
+  return window.btoa(unescape(encodeURIComponent(vendor))).replace(/=+$/,'').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function getMonthlyVendorChecks(vendor) {
+  return [...document.querySelectorAll('.monthly-pay-check')]
+    .filter(el => el.dataset.vendor === vendor);
+}
+
+function updateMonthlySelection(vendor) {
+  const checks = getMonthlyVendorChecks(vendor);
+  const selected = checks.filter(el => el.checked);
+  const btn = document.getElementById('monthly-pay-btn-' + makeMonthlyVendorKey(vendor));
+  if (!btn) return;
+  btn.disabled = selected.length === 0;
+  btn.textContent = selected.length ? `標記勾選付款（${selected.length}）` : '標記勾選付款';
+}
+
+function toggleMonthlyVendorSelection(vendor, checked) {
+  getMonthlyVendorChecks(vendor).forEach(el => { el.checked = checked; });
+  updateMonthlySelection(vendor);
+}
+
+async function markSelectedVendorOrdersPaid(vendor) {
+  if (!supabaseReady) { showAlert('離線模式', '目前為離線模式，無法批次更新'); return; }
+  const ids = getMonthlyVendorChecks(vendor).filter(el => el.checked).map(el => el.value);
+  const selectedOrders = orders.filter(o => ids.includes(o.id) && o.status === 'pending');
+  if (!selectedOrders.length) { toast('尚未勾選未付款訂單'); return; }
+
+  const total = selectedOrders.reduce((s, o) => s + o.total, 0);
+  const confirmed = await showConfirm(
+    '標記勾選訂單付款',
+    '廠商：' + vendor + '\n' +
+    '勾選筆數：' + selectedOrders.length + ' 筆\n' +
+    '勾選總額：$' + total.toLocaleString() + '\n\n' +
+    '確定只將這些訂單標記為已付款嗎？'
+  );
+  if (!confirmed) return;
+
+  const paidDate = await showPrompt('付款日期', '請輸入付款日期', today());
+  if (!paidDate || !paidDate.trim()) return;
+
+  const btn = document.getElementById('monthly-pay-btn-' + makeMonthlyVendorKey(vendor));
+  if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
+
+  let done = 0, failed = 0;
+  for (const o of selectedOrders) {
+    try {
+      await updateOrderStatus(o.id, 'paid', paidDate.trim());
+      o.status = 'paid';
+      o.paidDate = paidDate.trim();
+      done++;
+    } catch (e) {
+      console.error('PATCH error', o.id, e);
+      failed++;
+    }
+  }
+
+  renderOrders();
+  renderMonthly();
+  if (failed > 0) {
+    showAlert('勾選付款結果', '完成：' + done + ' 筆成功，' + failed + ' 筆失敗\n請查看 F12 Console 了解詳情');
+  } else {
+    toast('✓ 已標記 ' + done + ' 筆訂單為已付款');
+  }
 }
 
 async function printMonthly() {
