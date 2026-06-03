@@ -1,8 +1,15 @@
 // ── 月底結算 ──────────────────────────────────────────
+function getMonthlySettlementOrders(ym) {
+  return orders.filter(o =>
+    o.date.startsWith(ym) ||
+    (o.date < ym + '-01' && o.status === 'pending')
+  );
+}
+
 function renderMonthly() {
   const ym = document.getElementById('monthly-month').value;
   if (!ym) { document.getElementById('monthly-summary').innerHTML = '<div class="empty">請選擇月份</div>'; return; }
-  const list = orders.filter(o => o.date.startsWith(ym));
+  const list = getMonthlySettlementOrders(ym);
   if (!list.length) {
     document.getElementById('monthly-summary').innerHTML = `<div class="empty">${ym} 尚無訂單</div>`;
     document.getElementById('monthly-table').innerHTML = '';
@@ -17,7 +24,7 @@ function renderMonthly() {
   document.getElementById('monthly-summary').innerHTML = `
     <div class="metrics mb-5">
       <div class="metric"><div class="metric-label">廠商家數</div><div class="metric-value">${vendorSet.size}</div></div>
-      <div class="metric"><div class="metric-label">月份總金額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">本期總金額</div><div class="metric-value">$${total.toLocaleString()}</div></div>
       <div class="metric"><div class="metric-label">已付款</div><div class="metric-value ok">$${paid.toLocaleString()}</div></div>
       <div class="metric"><div class="metric-label">待付款</div><div class="metric-value warn">$${unpaid.toLocaleString()}</div></div>
     </div>`;
@@ -74,7 +81,7 @@ function renderMonthly() {
             <div class="flex items-center gap-3">
               ${!isAllPaid ? `<button class="btn btn-sm btn-success no-print" id="monthly-pay-btn-${makeMonthlyVendorKey(v)}" onclick="markSelectedVendorOrdersPaid('${safeVendorJs}')" disabled>標記勾選付款</button>` : ''}
               <div class="text-right">
-                <div class="text-[11px] text-txt-3">本月採購</div>
+                <div class="text-[11px] text-txt-3">本期採購</div>
                 <div class="text-lg font-semibold">$${vd.total.toLocaleString()}</div>
               </div>
             </div>
@@ -96,7 +103,7 @@ function renderMonthly() {
 
   const totalRow = `
     <div class="flex justify-end items-center gap-6 py-3 px-5 bg-surface-2 border border-border rounded-card mt-2">
-      <span class="text-[13px] text-txt-2">本月合計</span>
+      <span class="text-[13px] text-txt-2">本期合計（含前期未付款）</span>
       <span class="text-[22px] font-semibold">$${total.toLocaleString()}</span>
     </div>`;
 
@@ -202,7 +209,7 @@ async function printMonthly() {
       </span>
     </div>`;
 
-  const list = orders.filter(o => o.date.startsWith(ym));
+  const list = getMonthlySettlementOrders(ym);
   const total  = list.reduce((s,o) => s+o.total, 0);
   const paid   = list.filter(o=>o.status==='paid').reduce((s,o) => s+o.total, 0);
   const unpaid = total - paid;
@@ -270,7 +277,7 @@ async function printMonthly() {
       </div>`;
 
   if (unpaidVendors.length === 0) {
-    summaryHTML += `<div class="p-6 text-center text-ok font-semibold text-[15px] border border-ok/30 rounded-md bg-ok-bg">✓ 本月所有廠商均已付清</div>`;
+    summaryHTML += `<div class="p-6 text-center text-ok font-semibold text-[15px] border border-ok/30 rounded-md bg-ok-bg">✓ 本期所有廠商均已付清</div>`;
   } else {
     summaryHTML += `
       <table style="${tableStyle}" class="print-unpaid-table">
@@ -291,7 +298,7 @@ async function printMonthly() {
               return `<tr><td colspan="6" style="${tdStyle};height:18px;background:#f7f7f7;font-weight:600;">${row.category}</td></tr>`;
             }
             if (row.type === 'empty') {
-              return `<tr><td colspan="6" style="text-align:center;${tdStyle}" class="text-txt-3">— 本月無未付款 —</td></tr>`;
+              return `<tr><td colspan="6" style="text-align:center;${tdStyle}" class="text-txt-3">— 本期無未付款 —</td></tr>`;
             }
             return `<tr>
               <td style="${tdStyle}" class="font-medium">${row.vendor}</td>
@@ -322,15 +329,15 @@ async function batchMarkPaid() {
   if (!ym) { showAlert('提示', '請先選擇月份並查詢'); return; }
   if (!supabaseReady) { showAlert('離線模式', '目前為離線模式，無法批次更新'); return; }
 
-  const unpaidList = orders.filter(o => o.date.startsWith(ym) && o.status === 'pending');
-  if (!unpaidList.length) { toast('本月已無未付款訂單'); return; }
+  const unpaidList = getMonthlySettlementOrders(ym).filter(o => o.status === 'pending');
+  if (!unpaidList.length) { toast('本期已無未付款訂單'); return; }
 
   const total = unpaidList.reduce((s, o) => s + o.total, 0);
-  const confirmed = await showConfirm('本月全數標記付款',
+  const confirmed = await showConfirm('本期全數標記付款',
     '月份：' + ym + '\n' +
     '未付款筆數：' + unpaidList.length + ' 筆\n' +
     '未付款總額：$' + total.toLocaleString() + '\n\n' +
-    '確定要標記為已付款嗎？'
+    '包含此月份與前期未付款訂單。\n確定要全部標記為已付款嗎？'
   );
   if (!confirmed) return;
 
@@ -371,7 +378,7 @@ async function batchMarkPaid() {
     }
   }
 
-  if (btn) { btn.disabled = false; btn.textContent = '✓ 本月全數標記付款'; }
+  if (btn) { btn.disabled = false; btn.textContent = '✓ 本期全數標記付款'; }
   renderOrders();
   renderMonthly();
   if (failed > 0) {
