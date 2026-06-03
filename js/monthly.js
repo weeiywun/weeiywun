@@ -79,7 +79,6 @@ function renderMonthly() {
               ${isAllPaid ? '<span class="badge badge-paid">全數付清</span>' : `<span class="badge badge-pending">待付 $${vd.unpaid.toLocaleString()}</span>`}
             </div>
             <div class="flex items-center gap-3">
-              ${!isAllPaid ? `<button class="btn btn-sm btn-success no-print" id="monthly-pay-btn-${makeMonthlyVendorKey(v)}" onclick="markSelectedVendorOrdersPaid('${safeVendorJs}')" disabled>標記勾選付款</button>` : ''}
               <div class="text-right">
                 <div class="text-[11px] text-txt-3">本期採購</div>
                 <div class="text-lg font-semibold">$${vd.total.toLocaleString()}</div>
@@ -108,6 +107,7 @@ function renderMonthly() {
     </div>`;
 
   document.getElementById('monthly-table').innerHTML = vendorBlocks + totalRow;
+  updateMonthlyBulkPayButton();
 }
 
 function escapeMonthlyAttr(value) {
@@ -118,8 +118,8 @@ function escapeMonthlyAttr(value) {
     .replace(/>/g, '&gt;');
 }
 
-function makeMonthlyVendorKey(vendor) {
-  return window.btoa(unescape(encodeURIComponent(vendor))).replace(/=+$/,'').replace(/[^a-zA-Z0-9_-]/g, '_');
+function getMonthlySelectedChecks() {
+  return [...document.querySelectorAll('.monthly-pay-check')].filter(el => el.checked);
 }
 
 function getMonthlyVendorChecks(vendor) {
@@ -127,13 +127,15 @@ function getMonthlyVendorChecks(vendor) {
     .filter(el => el.dataset.vendor === vendor);
 }
 
-function updateMonthlySelection(vendor) {
-  const checks = getMonthlyVendorChecks(vendor);
-  const selected = checks.filter(el => el.checked);
-  const btn = document.getElementById('monthly-pay-btn-' + makeMonthlyVendorKey(vendor));
+function updateMonthlyBulkPayButton() {
+  const btn = document.getElementById('monthly-bulk-pay-btn');
   if (!btn) return;
-  btn.disabled = selected.length === 0;
-  btn.textContent = selected.length ? `標記勾選付款（${selected.length}）` : '標記勾選付款';
+  const count = getMonthlySelectedChecks().length;
+  btn.textContent = count ? `✓ 標記勾選付款（${count}）` : '✓ 本期全數標記付款';
+}
+
+function updateMonthlySelection(vendor) {
+  updateMonthlyBulkPayButton();
 }
 
 function toggleMonthlyVendorSelection(vendor, checked) {
@@ -141,16 +143,17 @@ function toggleMonthlyVendorSelection(vendor, checked) {
   updateMonthlySelection(vendor);
 }
 
-async function markSelectedVendorOrdersPaid(vendor) {
+async function markSelectedOrdersPaid() {
   if (!supabaseReady) { showAlert('離線模式', '目前為離線模式，無法批次更新'); return; }
-  const ids = getMonthlyVendorChecks(vendor).filter(el => el.checked).map(el => el.value);
+  const ids = getMonthlySelectedChecks().map(el => el.value);
   const selectedOrders = orders.filter(o => ids.includes(o.id) && o.status === 'pending');
   if (!selectedOrders.length) { toast('尚未勾選未付款訂單'); return; }
 
   const total = selectedOrders.reduce((s, o) => s + o.total, 0);
+  const vendorCount = new Set(selectedOrders.map(o => o.vendor)).size;
   const confirmed = await showConfirm(
     '標記勾選訂單付款',
-    '廠商：' + vendor + '\n' +
+    '廠商數：' + vendorCount + ' 家\n' +
     '勾選筆數：' + selectedOrders.length + ' 筆\n' +
     '勾選總額：$' + total.toLocaleString() + '\n\n' +
     '確定只將這些訂單標記為已付款嗎？'
@@ -160,7 +163,7 @@ async function markSelectedVendorOrdersPaid(vendor) {
   const paidDate = await showPrompt('付款日期', '請輸入付款日期', today());
   if (!paidDate || !paidDate.trim()) return;
 
-  const btn = document.getElementById('monthly-pay-btn-' + makeMonthlyVendorKey(vendor));
+  const btn = document.getElementById('monthly-bulk-pay-btn');
   if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
 
   let done = 0, failed = 0;
@@ -176,12 +179,21 @@ async function markSelectedVendorOrdersPaid(vendor) {
     }
   }
 
+  if (btn) { btn.disabled = false; btn.textContent = '✓ 本期全數標記付款'; }
   renderOrders();
   renderMonthly();
   if (failed > 0) {
     showAlert('勾選付款結果', '完成：' + done + ' 筆成功，' + failed + ' 筆失敗\n請查看 F12 Console 了解詳情');
   } else {
     toast('✓ 已標記 ' + done + ' 筆訂單為已付款');
+  }
+}
+
+async function handleMonthlyBulkPay() {
+  if (getMonthlySelectedChecks().length > 0) {
+    await markSelectedOrdersPaid();
+  } else {
+    await batchMarkPaid();
   }
 }
 

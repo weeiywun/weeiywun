@@ -148,7 +148,7 @@ tailwind.config = {
         <div class="form-group flex-none"><label class="text-xs font-medium text-txt-2">選擇月份</label><input type="month" id="monthly-month" class="w-[170px]"></div>
         <button class="btn btn-primary mt-4" onclick="renderMonthly()">查詢</button>
         <div class="flex gap-2 mt-4 ml-auto">
-          <button class="btn btn-success no-print" onclick="batchMarkPaid()">✓ 本期全數標記付款</button>
+          <button class="btn btn-success no-print" id="monthly-bulk-pay-btn" onclick="handleMonthlyBulkPay()">✓ 本期全數標記付款</button>
           <button class="btn btn-sm no-print" onclick="printMonthly()">⎙ 列印本期報表</button>
         </div>
       </div>
